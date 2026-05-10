@@ -1,8 +1,8 @@
 from processos import *
 
 class LeituraArquivo:
-    def __init__(self):
-        self.criador_processos = CriadorProcessos()
+    def __init__(self, criador_processos: CriadorProcessos):
+        self.criador_processos = criador_processos
 
     def alistaProcessos(self, nome_arquivo: str) -> list[Processo]:
         # Abre o arquivo de entrada, lê os processos e fecha o arquivo
@@ -12,7 +12,7 @@ class LeituraArquivo:
 
         for linha in linhas_arquivo:
             processo = self.leProcesso(linha) # Lê um processo da linha do arquivo
-            print(f"Processo lido: {processo}") # Imprime o processo lido para verificação
+            print(f"\nProcesso lido: {processo}") # Imprime o processo lido para verificação
             processos.append(processo) # Adiciona o processo à lista de processos
         arquivo.close()
 

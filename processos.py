@@ -22,6 +22,7 @@ class Processo:
         self.tempo_restante_fase_io = tempo_fase_io
 
         self.pcb = PCB(id)
+        self.tam = tam_MiB
 
         self.fase1_cpu = True
         self.fase_io = False
@@ -30,6 +31,9 @@ class Processo:
 
     @abstractmethod
     def atualizar_tempo_restante(self) -> None:
+        if(self.pcb.status == Status.NOVO):
+            self.pcb.atualizar_status(Status.PRONTO)
+    
         if self.fase1_cpu:
             try:
                 self._atualizar_tempo_restante_fase1_cpu()
@@ -87,10 +91,11 @@ class Processo:
 
     def __str__(self) -> str:
         return (f"Processo: {self.pcb.id}" 
-                f"\nFase 1 CPU restante: {self.tempo_restante_fase1_cpu}"
-                f"\nFase I/O restante: {self.tempo_restante_fase_io}"
-                f"\nFase 2 CPU restante: {self.tempo_restante_fase2_cpu}"
-                f"\nStatus: {self.pcb._status.name}")
+                f"\n\tFase 1 CPU restante: {self.tempo_restante_fase1_cpu}"
+                f"\n\tFase I/O restante: {self.tempo_restante_fase_io}"
+                f"\n\tFase 2 CPU restante: {self.tempo_restante_fase2_cpu}"
+                f"\n\tStatus: {self.pcb.status.name}"
+                f"\n\tTamanho: {self.tam} MiB")
 
 class ProcessoCPUBound(Processo):
     def __init__(self, id: int, tempo_cpu: int, tam_MiB: int):
@@ -107,18 +112,21 @@ class ProcessoCPUBound(Processo):
         self.tempo1_cpu = tempo_cpu
 
     def atualizar_tempo_restante(self) -> None:
+        if(self.pcb.status == Status.NOVO):
+            self.pcb.atualizar_status(Status.PRONTO)
+
         if not self.fase1_cpu:
-            raise RuntimeError("Processo CPU-bound já finalizado.")
+            raise RuntimeError("\nProcesso CPU-bound já finalizado.")
         
         self.tempo_restante_fase1_cpu -= 1
         if self.tempo_restante_fase1_cpu <= 0:
             self.fase1_cpu = False
             self.pcb.atualizar_status(Status.FINALIZADO)
-            print(f"Processo CPU-bound {self.pcb.id} finalizou a execução.")
+            print(f"\nProcesso CPU-bound {self.pcb.id} finalizou a execução.\n")
     
 class CriadorProcessos:
     def __init__(self):
-        self.id_aual = -1
+        self._id_aual = -1
 
     def criar(self, tempo_fase1_cpu: int, tempo_fase_io: int, tempo_fase2_cpu: int, tam_MiB: int) -> Processo:
         if tempo_fase1_cpu < 0 or tempo_fase2_cpu < 0 or tempo_fase_io < 0:
@@ -126,16 +134,18 @@ class CriadorProcessos:
     
         id = self.gerar_id() 
     
+        if(tempo_fase_io == 0):
+            return ProcessoCPUBound(id, tempo_fase1_cpu + tempo_fase2_cpu, tam_MiB)
         return Processo(id, tempo_fase1_cpu, tempo_fase_io, tempo_fase2_cpu, tam_MiB)
     
     def gerar_id(self) -> int:
-        self.id_aual += 1
-        return self.id_aual
-
+        self._id_aual += 1
+        return self._id_aual
+    
 class PCB: #bloco com infos de controle de um processo
     def __init__(self, id: int):
         self.id = id
-        self._status = Status.NOVO
+        self.status = Status.NOVO
 
     def atualizar_status(self, novo_status: int) -> None:
-        self._status = novo_status
+        self.status = novo_status

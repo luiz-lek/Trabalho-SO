@@ -11,9 +11,12 @@ class LeituraArquivo:
         processos: list[Processo] = [] # Lista de processos vazia
 
         for linha in linhas_arquivo:
-            processo = self.leProcesso(linha) # Lê um processo da linha do arquivo
-            print(f"\nProcesso lido: {processo}") # Imprime o processo lido para verificação
-            processos.append(processo) # Adiciona o processo à lista de processos
+            try:
+                processo = self.leProcesso(linha) # Lê um processo da linha do arquivo
+                print(f"\nProcesso lido: {processo}") # Imprime o processo lido para verificação
+                processos.append(processo) # Adiciona o processo à lista de processos
+            except (ValueError) as e:
+                print(f"Erro ao ler processo da linha '{linha.strip()}'")
         arquivo.close()
 
         return processos
@@ -23,10 +26,14 @@ class LeituraArquivo:
         partes = linhaProcesso.strip().split(",")
 
         # Cria e retorna um objeto Processo usando os valores extraídos da linha
-        return self.criador_processos.criar(
-            int(partes[1]),  # durCpu1
-            int(partes[2]),  # durIO
-            int(partes[3]),  # durCpu2
-            int(partes[4]),  # tam
-        )
-
+        try:
+            processo = self.criador_processos.criar(
+                int(partes[0]),  # durCpu1
+                int(partes[1]),  # durIO
+                int(partes[2]),  # durCpu2
+                int(partes[3]),  # tam
+            )
+            return processo
+        except (ValueError) as e:
+            print(f"Erro ao criar processo: {e}")
+            raise

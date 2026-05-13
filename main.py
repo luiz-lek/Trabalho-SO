@@ -10,8 +10,7 @@ def main():
     
     # Teste de execução dos processos
     for processo in processos:
-        processo.pcb.atualizar_status(Status.PRONTO) # Atualiza o status do processo para PRONTO para indicar que ele está pronto para execução
-        tempo_total = processo.get_tempo_restante_total() # Obtém o tempo total restante para a execução do processo
+        tempo_total = processo.get_tempo_restante_execucao() # Obtém o tempo total restante para a execução do processo
         for i in range(tempo_total):
             processo.atualizar_tempo_restante()
             print(f"\n{processo}")

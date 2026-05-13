@@ -12,10 +12,10 @@ class Processo(Protocol):
     def atualizar_tempo_restante(self) -> None:
         ...
     
-    def get_tempo_restante_total(self) -> int:
+    def get_tempo_restante_execucao(self) -> int:
         ...
 
-class Processo_IO:
+class ProcessoIO:
     def __init__(self, id: int, tempo_fase1_cpu: int, tempo_fase_io: int, tempo_fase2_cpu: int, tam_MiB: int, prioridade: int):    
         self.tempo_fase1_cpu = tempo_fase1_cpu
         self.tempo_restante_fase1_cpu = tempo_fase1_cpu
@@ -34,13 +34,13 @@ class Processo_IO:
         self.fase2_cpu = False
         
     
-    def get_tempo_restante_total(self) -> int:
+    def get_tempo_restante_execucao(self) -> int: # Retorna o tempo total restante para a execução completa do processo, considerando as três fases.
         return self.tempo_restante_fase1_cpu + self.tempo_restante_fase_io + self.tempo_restante_fase2_cpu
 
-    def atualizar_tempo_restante(self) -> None:
+    def atualizar_tempo_restante(self) -> None: # Atualiza o tempo restante do processo após a CPU executar uma unidade de tempo, considerando a fase atual do processo.
         if(self.pcb.status == Status.NOVO):
-            self.pcb.atualizar_status(Status.PRONTO)
-    
+            self.pcb.status = Status.PRONTO
+
         if self.fase1_cpu:
             try:
                 self._atualizar_tempo_restante_fase1_cpu()
@@ -64,36 +64,30 @@ class Processo_IO:
         
         raise RuntimeError("Processo já finalizou a execução.")
 
-    def _atualizar_tempo_restante_fase1_cpu(self) -> None:
-        if not self.fase1_cpu:
-            raise RuntimeError("Processo não está na fase 1 de CPU.")
-        
+    def _atualizar_tempo_restante_fase1_cpu(self) -> None: 
         self.tempo_restante_fase1_cpu -= 1
+
         if self.tempo_restante_fase1_cpu <= 0:
             self.fase1_cpu = False
             self.fase_io = True
-            self.pcb.atualizar_status(Status.BLOQUEADO)
+            self.pcb.status = Status.BLOQUEADO
             print(f"Processo {self.pcb.id} passou para a fase de E/S e foi bloqueado.")
 
     def _atualizar_tempo_restante_fase_io(self) -> None:
-        if not self.fase_io:
-            raise RuntimeError("Processo não está na fase de E/S.")
-        
         self.tempo_restante_fase_io -= 1
+
         if self.tempo_restante_fase_io <= 0:
             self.fase_io = False
             self.fase2_cpu = True
-            self.pcb.atualizar_status(Status.PRONTO)
+            self.pcb.status = Status.PRONTO
             print(f"Processo {self.pcb.id} passou para a fase 2 de CPU e está pronto para execução.")
 
     def _atualizar_tempo_restante_fase2_cpu(self) -> None:
-        if not self.fase2_cpu:
-            raise RuntimeError("Processo não está na fase 2 de CPU.")
-        
         self.tempo_restante_fase2_cpu -= 1
+
         if self.tempo_restante_fase2_cpu <= 0:
             self.fase2_cpu = False
-            self.pcb.atualizar_status(Status.FINALIZADO)
+            self.pcb.status = Status.FINALIZADO
             print(f"Processo {self.pcb.id} finalizou a execução.")
 
     def __str__(self) -> str:
@@ -115,17 +109,17 @@ class ProcessoCPUBound():
         self.pcb = PCB(id, prioridade)
         self.tam = tam_MiB
 
-    def atualizar_tempo_restante(self) -> None:
+    def atualizar_tempo_restante(self) -> None: #Atualiza após a cpu executar uma unidade de tempo.
         if(self.pcb.status == Status.NOVO):
-            self.pcb.atualizar_status(Status.PRONTO)
+            self.pcb.status = Status.PRONTO
         
         self.tempo_restante_cpu -= 1
         if self.tempo_restante_cpu <= 0:
             self.fase1_cpu = False
-            self.pcb.atualizar_status(Status.FINALIZADO)
+            self.pcb.status = Status.FINALIZADO
             print(f"\nProcesso CPU-bound {self.pcb.id} finalizou a execução.\n")
 
-    def get_tempo_restante_total(self) -> int:
+    def get_tempo_restante_execucao(self) -> int:
         return self.tempo_restante_cpu
     
     def __str__(self) -> str:
@@ -135,11 +129,9 @@ class ProcessoCPUBound():
                 f"\n\tPrioridade: {self.pcb.prioridade}"
                 f"\n\tTamanho: {self.tam} MiB")
     
-class PCB: #bloco com infos de controle de um processo
-    def __init__(self, id: int, prioridade: int = 0):
+class PCB: # Bloco com infos de controle de um processo
+    def __init__(self, id: int, prioridade: int):
         self.id = id
+        self.ultima_fila = -1 # Atributo para armazenar a última fila em que o processo estava antes de ser despachado.
         self.status = Status.NOVO
         self.prioridade = prioridade
-
-    def atualizar_status(self, novo_status: int) -> None:
-        self.status = novo_status

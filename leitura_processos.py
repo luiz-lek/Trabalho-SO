@@ -28,7 +28,7 @@ class LeituraArquivo:
 
         # Cria e retorna um objeto Processo usando os valores extraídos da linha
         try:
-            processo = self.despachante.criar_processo_novo(
+            processo = self.despachante.criar_processo(
                 int(partes[0]),  # durCpu1
                 int(partes[1]),  # durIO
                 int(partes[2]),  # durCpu2

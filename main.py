@@ -1,5 +1,5 @@
 from processos import Processo, CriadorProcessos, Status
-from leitura_processos import LeituraArquivo
+from leitura_processos import *
 from GUI import Application
 
 def main():

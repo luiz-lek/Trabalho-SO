@@ -1,14 +1,15 @@
 from processos import *
+from escalonador import Despachante
 
 class LeituraArquivo:
-    def __init__(self, criador_processos: CriadorProcessos):
-        self.criador_processos = criador_processos
+    def __init__(self, despachante: Despachante):
+        self.despachante = despachante
 
-    def alistaProcessos(self, nome_arquivo: str) -> list[Processo]:
+    def alistaProcessos(self, nome_arquivo: str) -> list[ProcessoIO]:
         # Abre o arquivo de entrada, lê os processos e fecha o arquivo
         arquivo = open(nome_arquivo, "r")
         linhas_arquivo: list[str] = arquivo.readlines()
-        processos: list[Processo] = [] # Lista de processos vazia
+        processos: list[ProcessoIO] = [] # Lista de processos vazia
 
         for linha in linhas_arquivo:
             try:
@@ -21,17 +22,18 @@ class LeituraArquivo:
 
         return processos
 
-    def leProcesso(self, linhaProcesso: str) -> Processo:
+    def leProcesso(self, linhaProcesso: str) -> ProcessoIO:
         # Divide a linha do processo usando vírgula como delimitador e converte os valores para os tipos apropriados
         partes = linhaProcesso.strip().split(",")
 
         # Cria e retorna um objeto Processo usando os valores extraídos da linha
         try:
-            processo = self.criador_processos.criar(
+            processo = self.despachante.criar_processo_novo(
                 int(partes[0]),  # durCpu1
                 int(partes[1]),  # durIO
                 int(partes[2]),  # durCpu2
                 int(partes[3]),  # tam
+                int(partes[4])   # prioridade
             )
             return processo
         except (ValueError) as e:

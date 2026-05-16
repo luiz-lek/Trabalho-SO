@@ -10,7 +10,9 @@ def main():
 
     # Imprime os processos lidos para verificação
     for processo in processos:
-        for i in range(processo.tempo_fase2_cpu):
+        tempo_total = processo.get_tempo_restante_execucao() # Obtém o tempo total restante para a execução do processo
+        processo.pcb.status = Status.PRONTO # Define o status do processo como PRONTO para simular a execução
+        for i in range(tempo_total):
             processo.atualizar_tempo_restante()
             print(f"\n{processo}")
             

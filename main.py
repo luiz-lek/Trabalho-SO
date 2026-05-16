@@ -1,12 +1,15 @@
-from processos import Processo, CriadorProcessos, Status
+from processos import Processo, Status
 from leitura_processos import *
+from escalonador import *
 from GUI import Application
 
 def main():
     # Abre o arquivo de entrada, lê os processos e fecha o arquivo
-    arquivo = open("entrada.txt", "r")
-    processos = alistaProcessos(arquivo.readlines())
-    arquivo.close()
+    memoria = None # Criar a memória assim que implementada.
+    escalonador = Escalonador(memoria)
+    despachante = Despachante(escalonador)
+    leitura_entrada = LeituraArquivo(despachante)
+    processos: list[Processo] = leitura_entrada.alistaProcessos("entrada.txt")
 
     # Imprime os processos lidos para verificação
     for processo in processos:

@@ -76,8 +76,7 @@ class Escalonador:
     def adicionar_novo_processo(self, tempo_fase1_cpu: int, tempo_fase_io: int, tempo_fase2_cpu: int, tam_MiB: int, prioridade: int) -> None:
         processo: Processo = self.despachante.criar_processo(tempo_fase1_cpu, tempo_fase_io, tempo_fase2_cpu, tam_MiB, prioridade)
 
-        #Adicionar verificação de memória disponível aqui, para decidir se o processo vai pra fila de prontos ou pra fila de novos e esperar memória.
-
+        # Adicionar verificação de memória disponível aqui, para decidir se o processo vai pra fila de prontos ou pra fila de novos e esperar memória.
         if processo.pcb.prioridade == 0:
             self.fila_prioridade0.adicionar_processo(processo)
             return
@@ -91,9 +90,7 @@ class Escalonador:
         processo.pcb.Status = Status.PRONTO
         if processo.pcb.prioridade == 0:
             raise RuntimeError("Processos de prioridade 0 não devem ser reinseridos após quantum, pois são executados de forma contínua.")
-        self.fila_prioridade1.reinserir_processo_despachado(processo)
-
-        
+        self.fila_prioridade1.reinserir_processo_despachado(processo)   
 
 class Despachante():
     def __init__(self, escalonador: Escalonador):

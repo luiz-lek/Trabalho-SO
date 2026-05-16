@@ -9,7 +9,7 @@ class LeituraArquivo:
         # Abre o arquivo de entrada, lê os processos e fecha o arquivo
         arquivo = open(nome_arquivo, "r")
         linhas_arquivo: list[str] = arquivo.readlines()
-        processos: list[ProcessoIO] = [] # Lista de processos vazia
+        processos: list[Processo] = [] # Lista de processos vazia
 
         for linha in linhas_arquivo:
             try:

@@ -1,20 +1,20 @@
-from escalonador import Despachante
-from processos import Processo, Status
-from leitura_processos import LeituraArquivo
+from processos import Processo, CriadorProcessos, Status
+from leitura_processos import *
+from GUI import Application
 
 def main():
-    despachante = Despachante() # Cria uma instância da classe Despachante para criar os objetos Processo a partir dos dados lidos do arquivo
-    leitor_arquivo_processos = LeituraArquivo(despachante) # Cria uma instância da classe LeituraArquivo para ler os processos do arquivo de entrada
-    processos: list[Processo] = leitor_arquivo_processos.alistaProcessos("entrada.txt") # Lê os processos do arquivo de entrada e os armazena em uma lista``
+    # Abre o arquivo de entrada, lê os processos e fecha o arquivo
+    arquivo = open("entrada.txt", "r")
+    processos = alistaProcessos(arquivo.readlines())
+    arquivo.close()
 
-    
-    # Teste de execução dos processos
+    # Imprime os processos lidos para verificação
     for processo in processos:
-        tempo_total = processo.get_tempo_restante_execucao() # Obtém o tempo total restante para a execução do processo
-        for i in range(tempo_total):
+        for i in range(processo.tempo_fase2_cpu):
             processo.atualizar_tempo_restante()
             print(f"\n{processo}")
-
+            
     
 if __name__ == "__main__":
+    app = Application() # inicia as interface gráfica
     main()

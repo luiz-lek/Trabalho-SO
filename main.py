@@ -1,6 +1,9 @@
 from processos import Processo, Status
 from leitura_processos import *
 from escalonador import *
+from cpu import Cpu
+import threading
+from memoria_principal import MemoriaPrincipal
 from GUI import Application
 from CPU import CPU
 from rich.traceback import install
@@ -8,22 +11,18 @@ install()
 
 def main():
     # Abre o arquivo de entrada, lê os processos e fecha o arquivo
-    memoria = None # Criar a memória assim que implementada.
-    escalonador = Escalonador(memoria)
-    despachante = Despachante(escalonador)
+    escalonador = Escalonador()
+    despachante = Despachante()
     leitura_entrada = LeituraArquivo(despachante)
     processos: list[Processo] = leitura_entrada.alistaProcessos("entrada.txt")
 
     # Imprime os processos lidos para verificação
     for processo in processos:
-        tempo_total = processo.get_tempo_restante_execucao() # Obtém o tempo total restante para a execução do processo
-        processo.pcb.status = Status.PRONTO # Define o status do processo como PRONTO para simular a execução
-        for i in range(tempo_total):
-            processo.atualizar_tempo_restante()
-            print(f"\n{processo}")
+        print(f"\nProcesso lido: {processo}")
+        escalonador.inserir_processo__novo(processo)
 
-            from leitura_processos import LeituraArquivo
+    app = Application()
+            
     
 if __name__ == "__main__":
-    app = Application() # inicia as interface gráfica
     main()

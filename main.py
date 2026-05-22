@@ -5,6 +5,9 @@ from cpu import Cpu
 import threading
 from memoria_principal import MemoriaPrincipal
 from GUI import Application
+from CPU import CPU
+from rich.traceback import install
+install()
 
 def main():
     # Abre o arquivo de entrada, lê os processos e fecha o arquivo

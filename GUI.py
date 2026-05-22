@@ -1,13 +1,19 @@
 from tkinter import *
 from tkinter.ttk import Treeview 
 from tkinter.ttk import Style
+
+
 class Application:
 
     def __init__(self):
         self.window = Tk() #cria a janela
         #Configurações da janela
+        self.altura = int(self.window.winfo_screenheight() * 0.75) #Altura
+        self.largura = int(self.window.winfo_screenwidth() * 0.75) #Largura
+        self.tamJanela = str(self.largura) + "x" + str(self.altura)
+        print(self.tamJanela)
         self.window.title("Escalonador de Processos") #nome da janela
-        self.window.geometry('680x480') #tamanho da janela ( ͡° ͜ʖ ͡°) 
+        self.window.geometry(self.tamJanela) #tamanho da janela ( ͡° ͜ʖ ͡°) 
         icon = PhotoImage(file = "icon.png") #ícone da janela
         self.window.iconphoto(True, icon) #ainda o icone da janela
         self.window.config(bg="#000000") #Etnia da janela ¯\_(ツ)_/¯
@@ -18,7 +24,7 @@ class Application:
         self.window.rowconfigure(0, weight=1)
 
         #Barra lateral
-        self.barra = Frame(self.window, bg="#111111", width=180)
+        self.barra = Frame(self.window, bg="#111111", width=(self.largura/6))
         self.barra.pack(side=LEFT, fill=Y)
         self.barra.pack_propagate(False)
         self.barra_aberta = True
@@ -73,7 +79,7 @@ class Application:
             self.btn_retrair.config(text="☰", font=("Courier", 14, "bold"))
             self.barra_aberta = False
         else:
-            self.barra.config(width=180)
+            self.barra.config(width=(self.largura/6))
             self.btn_retrair.config(text="x", font=("Courier", 14, "bold"))
             self.barra_aberta = True
         print("estado depois:", self.barra_aberta)
@@ -93,33 +99,39 @@ class processMakingScreen(Frame):
         self.pack(fill=BOTH, expand=True)
 
         #ID do processo
-        Label(self, text="PID", bg="#000000", fg="#07D2EC", font=("Courier", 10)).grid(row=0, column=0, padx=10, pady=8, sticky="w")
+        Label(self, text="PID", bg="#000000", fg="#07D2EC", 
+            font=("Courier", 10)).grid(row=0, column=0, padx=10, pady=8, sticky="w")
         self.entry_pid = Entry(self, bg="#111111", fg="#07D2EC", insertbackground="#07D2EC")
         self.entry_pid.grid(row=1, column=0, padx=10, pady=8, sticky="w")
 
         #Tempo CPU 1
-        Label(self, text="Tempo CPU 1", bg="#000000", fg="#07D2EC", font=("Courier", 10)).grid(row=2, column=0, padx=10, pady=8, sticky="w")
+        Label(self, text="Tempo CPU 1", bg="#000000", fg="#07D2EC", 
+            font=("Courier", 10)).grid(row=2, column=0, padx=10, pady=8, sticky="w")
         self.entry_cpu1 = Entry(self, bg="#111111", fg="#07D2EC", insertbackground="#07D2EC")
         self.entry_cpu1.grid(row=3, column=0, padx=10, pady=8, sticky="w")
 
         #Tempo CPU 2
-        Label(self, text="Tempo CPU 2", bg="#000000", fg="#07D2EC", font=("Courier", 10)).grid(row=2, column=1, padx=10, pady=8, sticky="w")
+        Label(self, text="Tempo CPU 2", bg="#000000", fg="#07D2EC", 
+            font=("Courier", 10)).grid(row=2, column=1, padx=10, pady=8, sticky="w")
         self.entry_cpu2 = Entry(self, bg="#111111", fg="#07D2EC", insertbackground="#07D2EC")
         self.entry_cpu2.grid(row=3, column=1, padx=10, pady=8, sticky="w")
 
         #Tempo I/O
-        Label(self, text="Tempo I/O", bg="#000000", fg="#07D2EC", font=("Courier", 10)).grid(row=4, column=0, padx=10, pady=8, sticky="w")
+        Label(self, text="Tempo I/O", bg="#000000", fg="#07D2EC", 
+            font=("Courier", 10)).grid(row=4, column=0, padx=10, pady=8, sticky="w")
         self.entry_io = Entry(self, bg="#111111", fg="#07D2EC", insertbackground="#07D2EC")
         self.entry_io.grid(row=5, column=0, padx=10, pady=8, sticky="w")
 
         #Tamanho em memória
-        Label(self, text="Tamanho em memória", bg="#000000", fg="#07D2EC", font=("Courier", 10)).grid(row=4, column=1, padx=10, pady=8, sticky="w")
+        Label(self, text="Tamanho em memória", bg="#000000", 
+            fg="#07D2EC", font=("Courier", 10)).grid(row=4, column=1, padx=10, pady=8, sticky="w")
         self.entry_memoria = Entry(self, bg="#111111", fg="#07D2EC", insertbackground="#07D2EC")
         self.entry_memoria.grid(row=5, column=1, padx=10, pady=8, sticky="w")
 
         #Botão :D
         botao = Button(self, text="Salvar", command=self.processMaker, bg="#05a8bc", fg="#000000",
-                       relief=FLAT, activebackground="#07D2EC", activeforeground="#111111").grid(row=6, column=0, columnspan=2, pady=20)
+                       relief=FLAT, activebackground="#07D2EC", 
+                       activeforeground="#111111").grid(row=6, column=0, columnspan=2, pady=20)
 
 
     def processMaker(self):
@@ -168,11 +180,11 @@ class processListScreen(Frame):
         tabela.heading("io", text="Tempo I/O")
         tabela.heading("memoria", text="Tamanho em memória")
 
-        tabela.column("pid", width=85)
-        tabela.column("cpu1", width=85)
-        tabela.column("io", width=85)
-        tabela.column("cpu2", width=85)
-        tabela.column("memoria", width=160)
+        tabela.column("pid", width=120)
+        tabela.column("cpu1", width=120)
+        tabela.column("io", width=120)
+        tabela.column("cpu2", width=120)
+        tabela.column("memoria", width=180)
 
         try:
             with open("entrada.txt", "r") as f:

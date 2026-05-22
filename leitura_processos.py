@@ -2,6 +2,7 @@ from processos import *
 from escalonador import Despachante
 
 class LeituraArquivo:
+    
     def __init__(self, despachante: Despachante):
         self.despachante = despachante
 

@@ -1,74 +1,58 @@
 from processos import *
 from cpu import Cpu
+from queue import Queue
+from memoria_principal import MemoriaPrincipal
 
 QTD_FILAS_FEED_BACK = 3
 
-class Fila:
-    def __init__(self):
-        self.fila: list[Processo] = []
-
-    def adicionar_processo(self, processo: Processo) -> None:
-        self.fila.append(processo)
-
-    def remover_processo(self) -> Processo:
-        if self.esta_vazia():
-            return None
-        return self.fila.pop(0)
-
-    def esta_vazia(self) -> bool:
-        return len(self.fila) == 0
-
 class politica_FCFS:
+
     def __init__(self):
-        self.fila = Fila()
+        self.fila = Queue()
 
     def adicionar_processo(self, processo: Processo) -> None:
-        self.fila.adicionar_processo(processo)
+        self.fila.put(processo)
 
     def retirar_processo(self) -> Processo:
-        if self.fila.esta_vazia():
+        if self.fila.empty():
             return None
         return self.fila.remover_processo()
     
-    def esta_vazia(self) -> bool:
-        return self.fila.esta_vazia()
-    
 class politica_feed_back:
+
     def __init__(self, qtd_filas: int):
-        self.fila: list[Fila] = []
+        self.fila: list[Queue] = []
         self.qtd_filas = qtd_filas
 
         for i in range(self.qtd_filas):
-            fila_i = Fila()
+            fila_i = Queue()
             self.fila.append(fila_i)
 
     def retirar_processo(self) -> Processo: # Retorna o processo e o indice da fila de onde foi retirado.
         for i in range(self.qtd_filas):
             if not self.fila[i].esta_vazia():
-                processo = self.fila[i].remover_processo()
+                processo = self.fila[i].get()
                 processo.pcb.ultima_fila = i
                 return processo
+            
         return None
-    
-    def filas_estao_vazias(self) -> bool:
-        for i in range(self.qtd_filas):
-            if not self.fila[i].esta_vazia():
-                return False
-        return True
         
     def adicionar_novo_processo(self, processo: Processo) -> None: # Processos novos sempre entram na fila 0.
-        self.fila[0].adicionar_processo(processo)
+        self.fila[0].put(processo)
 
-    def reinserir_processo_despachado(self, processo: Processo) -> None:
-        ultima_fila = processo.pcb.ultima_fila
+    def reinserir_processo_despachado(self, processo: Processo) -> None: # Insere um processo que perdeu cpu na fila seguinte. 
+        ultima_fila = processo.pcb.ultima_fila                           # Se estava na última fila antes de ser despachado, ele permanece nela.
         if(ultima_fila == self.qtd_filas - 1):
-            self.fila[ultima_fila].adicionar_processo(processo)
+            self.fila[ultima_fila].put(processo)
             return
-        self.fila[ultima_fila + 1].adicionar_processo(processo)
+        self.fila[ultima_fila + 1].put(processo)
     
 class Escalonador:
-    def __init__(self, memoria): # Adicionar o tipo da memória assim que implementado.
-        self.fila_novo = Fila()
+    
+    def __init__(self): # Adicionar o tipo da memória assim que implementado.
+        self.fila_novo = Queue()
+        self.memoria_principal = MemoriaPrincipal()
+
         self.fila_finalizados: list[Processo] = list()
         self.fila_prioridade0 = politica_FCFS()
         self.fila_prioridade1 = politica_feed_back(QTD_FILAS_FEED_BACK)
@@ -107,6 +91,7 @@ class Escalonador:
             self.fila_finalizados.append(processo)
 
 class Despachante():
+
     def __init__(self):
         self._id_atual = -1
 

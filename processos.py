@@ -14,6 +14,7 @@ class FaseProcesso(IntEnum):
     CPU2 = 2
 
 class Processo(Protocol):
+
     def decrementar_tempo_restante(self) -> None:
         ...
     
@@ -21,6 +22,7 @@ class Processo(Protocol):
         ...
 
 class ProcessoIO:
+    
     def __init__(self, id: int, tempo_fase1_cpu: int, tempo_fase_io: int, tempo_fase2_cpu: int, tam_MiB: int, prioridade: int):    
         self.tempo_fase1_cpu = tempo_fase1_cpu
         self.tempo_fase_io = tempo_fase_io
@@ -92,6 +94,7 @@ class ProcessoIO:
                 f"\n\tTamanho: {self.tam} MiB")
 
 class ProcessoCPUBound():
+
     def __init__(self, id: int, tempo_cpu: int, tam_MiB: int, prioridade: int):
         if tam_MiB > 512: #tamanho em MiB
             raise ValueError("Tamanho do processo excede o limite de 512 MiB");
@@ -122,6 +125,7 @@ class ProcessoCPUBound():
                 f"\n\tTamanho: {self.tam} MiB")
     
 class PCB: # Bloco com infos de controle de um processo
+
     def __init__(self, id: int, prioridade: int):
         self.id = id
         self.ultima_fila = None # Atributo para armazenar a última fila em que o processo estava antes de ser despachado pela política feed-back.

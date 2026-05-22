@@ -17,6 +17,8 @@ def main():
     for processo in processos:
         print(f"\nProcesso lido: {processo}")
         escalonador.inserir_processo__novo(processo)
+
+    app = Application()
             
     
 if __name__ == "__main__":

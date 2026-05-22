@@ -1,0 +1,24 @@
+from processos import *
+
+class MemoriaPrincipal:
+    def __init__(self):
+        # Lista de alocação (0 para vazio e 1 para alocado)
+        self.alocacao = [0] * 32000
+
+        # Lista de processos
+        self.processos = []
+
+    def aloca(self, p: Processo):
+        # Pendente: fazer função de alocação de memória para um processo, verificando se há espaço suficiente e alocando o processo na memória.
+        
+        # Verificando se há espaço suficiente para alocar o processo
+        for i in range(len(self.alocacao)):
+            if self.alocacao[i] == 0: # Encontrou um espaço vazio
+                if i + p.tam <= len(self.alocacao): # Verifica se o processo cabe no espaço vazio restante
+                    
+                    # Faz a alocação do processo na memória
+                    for j in range(i, i + p.tam):
+                        self.alocacao[j] = 1
+
+                    self.processos.append(p) # Adiciona o processo à lista de processos alocados
+                    print(f"Processo {p.pcb.id} alocado na memória.")

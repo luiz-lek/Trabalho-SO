@@ -1,5 +1,5 @@
 from processos import *
-from cpu import Cpu
+from cpu import CPU
 from queue import Queue
 from memoria_principal import MemoriaPrincipal
 
@@ -28,7 +28,7 @@ class politica_feed_back:
             fila_i = Queue()
             self.fila.append(fila_i)
 
-    def retirar_processo(self) -> Processo: # Retorna o processo e o indice da fila de onde foi retirado.
+    def retirar_processo(self) -> Processo: # Retorna o processo
         for i in range(self.qtd_filas):
             if not self.fila[i].esta_vazia():
                 processo = self.fila[i].get()
@@ -49,9 +49,9 @@ class politica_feed_back:
     
 class Escalonador:
     
-    def __init__(self): # Adicionar o tipo da memória assim que implementado.
+    def __init__(self, memoria_principal: MemoriaPrincipal): # Adicionar o tipo da memória assim que implementado.
         self.fila_novo = Queue()
-        self.memoria_principal = MemoriaPrincipal()
+        self.memoria_principal = memoria_principal
 
         self.fila_finalizados: list[Processo] = list()
         self.fila_prioridade0 = politica_FCFS()
@@ -73,7 +73,11 @@ class Escalonador:
     
     def admitir_processo(self) -> None:
         if self.fila_novo.esta_vazia():
-            raise RuntimeError("Não há processos para admitir.")
+            return
+        
+        processo = self.fila_novo.get();
+        if processo is not None:
+            self.inserir_processo__novo(processo);
         
     def inereir_processo_interrompido(self, processo: Processo) -> None:
         if processo.pcb.prioridade == 0:

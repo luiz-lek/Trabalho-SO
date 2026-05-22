@@ -1,10 +1,11 @@
 from processos import Processo, Status
 from leitura_processos import *
 from escalonador import *
+from cpu import Cpu
 import threading
 from memoria_principal import MemoriaPrincipal
 from GUI import Application
-from cpu import CPU
+from CPU import CPU
 from rich.traceback import install
 install()
 

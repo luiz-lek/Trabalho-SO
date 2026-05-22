@@ -1,5 +1,5 @@
 from processos import *
-from cpu import CPU
+from cpu import Cpu
 from queue import Queue
 from memoria_principal import MemoriaPrincipal
 

@@ -9,8 +9,6 @@ class MemoriaPrincipal:
         self.processos = []
 
     def aloca(self, p: Processo):
-        # Pendente: fazer função de alocação de memória para um processo, verificando se há espaço suficiente e alocando o processo na memória.
-        
         # Verificando se há espaço suficiente para alocar o processo
         for i in range(len(self.alocacao)):
             if self.alocacao[i] == 0: # Encontrou um espaço vazio
@@ -22,3 +20,19 @@ class MemoriaPrincipal:
 
                     self.processos.append(p) # Adiciona o processo à lista de processos alocados
                     print(f"Processo {p.pcb.id} alocado na memória.")
+
+                    return [i, i + p.tam - 1] # Retorna o intervalo de memória alocado para o processo
+        
+        print(f"Não há espaço suficiente para alocar o processo {p.pcb.id}.")
+
+    def desaloca(self, p: Processo, inicio: int, fim: int):
+        if p not in self.processos:
+            print(f"Processo {p.pcb.id} não encontrado na memória.")
+            return
+        
+        # Desaloca o processo da memória marcando o intervalo como vazio (0)
+        for i in range(inicio, fim + 1):
+            self.alocacao[i] = 0
+        
+        self.processos.remove(p) # Remove o processo da lista de processos alocados
+        print(f"Processo {p.pcb.id} desalocado da memória do intervalo {inicio} ao {fim}.")

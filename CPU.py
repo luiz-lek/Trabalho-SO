@@ -4,9 +4,6 @@ from processos import ProcessoIO, Status, ProcessoCPUBound
 #Tarefas a fazer:
 #1. fazer a verificação de estado de PRONTO dos processos nas funções: alocar..., Clock..., 
 
-#Onde eu parei:
-#Criar a classe DMA.
-
 class Estado(Enum):
     Vazio = 0
     Ocupado = 1
@@ -48,7 +45,7 @@ class CPU:
         self.unid_temp = 0
 
         return copia
-
+ 
 
     def Clock_CPU(self):
         """
@@ -126,4 +123,16 @@ class CPU:
     
 
 class DMA:
-    pass
+    def __init__(self, processos: ProcessoIO):
+        self.lista = [];
+        self.processo = processos
+        self.lista.append(self.processo)
+
+    def Clock_DMA(self):
+        if(self.processo is None):
+            return
+        
+        for processo in range(self.lista):
+            self.processo._atualizar_tempo_restante_fase_io()
+
+    

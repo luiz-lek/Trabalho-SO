@@ -5,7 +5,6 @@ from cpu import CPU
 import threading
 from memoria_principal import MemoriaPrincipal
 from gui import Application
-from cpu import CPU
 from rich.traceback import install
 
 install()

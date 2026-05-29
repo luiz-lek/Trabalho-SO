@@ -1,12 +1,12 @@
 from enum import Enum
 from processos import ProcessoIO, Status, ProcessoCPUBound
 
-#Tarefas a fazer:
-#1. fazer a verificação de estado de PRONTO dos processos nas funções: alocar..., Clock..., 
+"""
+Tarefas a fazer:
+1. fazer a verificação de estado de PRONTO dos processos nas funções: alocar..., Clock..., 
+2. Eu tava pensando colocar a função interrupção dentro do clock para não precisar chamar duas funções dentro da main.py
 
-#Onde eu parei:
-#Criar a classe DMA.
-
+"""
 class Estado(Enum):
     Vazio = 0
     Ocupado = 1
@@ -48,7 +48,7 @@ class CPU:
         self.unid_temp = 0
 
         return copia
-
+ 
 
     def Clock_CPU(self):
         """
@@ -105,8 +105,7 @@ class CPU:
             return self.desalocar_processo()
         else:
             return
-
-
+        
     def __str__(self) -> str:
         if (self.processo == None):
             return f"CPU {self.id} está ociosa"
@@ -123,7 +122,85 @@ class CPU:
                 f"\n\tStatus: {self.processo.pcb.status.name}"
                 f"\n\tPrioridade: {self.processo.pcb.prioridade}"
                 f"\n\tTamanho: {self.processo.tam} MiB")
-    
 
 class DMA:
-    pass
+    def __init__(self):
+        # Representa fisicamente os 4 discos do sistema.
+        self.discos: list[ProcessoIO | None] = [None, None, None, None]
+        self.estados_discos = [Estado.Vazio for _ in range(4)]
+        
+        # Fila para processos que chegaram bloqueados, mas não há disco livre no momento.
+        self.fila_espera: list[ProcessoIO] = []
+
+
+    def adicionar_processo(self, processo: ProcessoIO) -> None:
+        """
+        Recebe um processo que terminou a Fase 1 da CPU e o coloca na fila de espera.
+        Em seguida, tenta alocá-lo imediatamente em um disco, se houver vaga.
+        """
+        self.fila_espera.append(processo)
+        self._alocar_nos_discos()
+
+
+    def _alocar_nos_discos(self) -> None:
+        """
+        Método interno (privado) que move os processos da fila de espera 
+        para os discos que estiverem com o estado Vazio.
+        """
+        for i in range(4):
+            if self.estados_discos[i] == Estado.Vazio and len(self.fila_espera) > 0:
+                # Remove o primeiro processo da fila (posição 0) e coloca no disco
+                processo_para_alocar = self.fila_espera.pop(0)
+                
+                self.discos[i] = processo_para_alocar
+                self.estados_discos[i] = Estado.Ocupado
+                print(f"DMA: Processo {processo_para_alocar.pcb.id} iniciou I/O no Disco {i}.")
+
+
+    def Clock_IO(self) -> list[ProcessoIO]:
+        """
+        Avança o tempo de I/O de todos os processos que estão atualmente nos discos.
+        Retorna uma lista de processos que terminaram o I/O neste exato tique,
+        para que o main.py possa devolvê-los ao Escalonador.
+        """
+        processos_concluidos: list[ProcessoIO] = []
+
+        for i in range(4):
+            if self.estados_discos[i] == Estado.Ocupado:
+                processo = self.discos[i]
+                
+                if processo is not None:
+                    processo.atualizar_tempo_restante()
+
+                    if processo.pcb.status == Status.PRONTO:
+                        processos_concluidos.append(processo)
+                        
+                        self.discos[i] = None
+                        self.estados_discos[i] = Estado.Vazio
+                        print(f"DMA: Processo {processo.pcb.id} liberou o Disco {i}.")
+
+        self._alocar_nos_discos()
+        
+        return processos_concluidos
+    
+
+    def __str__(self) -> str:
+        """
+        Gera uma representação em texto do estado atual do DMA,
+        útil para exibir na interface/console a cada unidade de tempo.
+        """
+        status_discos = []
+        for i in range(4):
+            if self.estados_discos[i] == Estado.Vazio:
+                status_discos.append(f"Disco {i}: Vazio")
+            else:
+                processo = self.discos[i]
+                if processo is not None:
+                    status_discos.append(f"Disco {i}: Processo {processo.pcb.id} (Faltam {processo.tempo_restante_fase_io} u.t.)")
+        
+        fila_ids = [p.pcb.id for p in self.fila_espera]
+        
+        return (f"--- Status do DMA ---\n"
+                f"{chr(10).join(status_discos)}\n"
+                f"Fila de Espera (I/O): {fila_ids}\n"
+                f"---------------------")

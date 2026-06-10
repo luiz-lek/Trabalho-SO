@@ -83,7 +83,7 @@ class CPU:
             if resultado is not None:
                 return resultado
 
-        if self.unid_temp >= 2 and not self.processo.pcb.prioridade == 0: 
+        if self.unid_temp >= (2 ** self.processo.pcb.ultima_fila) and not self.processo.pcb.prioridade == 0: 
             print("-----------------Interrupção: Fatia de tempo-----------------")
             return self.desalocar_processo()
         
@@ -204,3 +204,26 @@ class DMA:
                 f"{chr(10).join(status_discos)}\n"
                 f"Fila de Espera (I/O): {fila_ids}\n"
                 f"---------------------")
+    
+
+"""
+código para interrompar a CPU em caso de finalização de processo do DMA. Eu pensei e colocá-la na main
+para a implementação deste código eu pensei em fazer:
+
+
+for processo in FinalizadosDMA: #FinalizadosDMA é a fila de processos que tenha terminado sua execução no DMA
+    fila.adicionar_processo(processo) #não sei se essa é a função para adicionar o processo a fista
+
+quant_cpu_interrompida = len(FinalizadosDMA) #quantidade de processo finalizados no DMA
+
+for cpu in CPUs:
+    if(quant_cpu_interrompida == 0): #se não tiver processo finalizado pelo DMA, então nenhuma CPU será interrompida
+        break;
+    if(cpu.processo is None):
+        continue
+    if(cpu.processo.pcb.pioridade == 1): #As CPUs devem ficar um uma lista contendo todas as 4 CPUs
+        process_interrompido = cpu.desalocar_processo();    
+        flia.adicionar_processo(processo_interompido);
+        quant_cpu_interrompida -= 1;
+
+"""

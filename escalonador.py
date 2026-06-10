@@ -32,7 +32,7 @@ class politica_feed_back:
         for i in range(self.qtd_filas):
             if not self.fila[i].empty():
                 processo = self.fila[i].get()
-                processo.pcb.ultima_fila = i
+                processo.ultima_fila = i
                 return processo
             
         return None
@@ -41,7 +41,7 @@ class politica_feed_back:
         self.fila[0].put(processo)
 
     def reinserir_processo_despachado(self, processo: Processo) -> None: # Insere um processo que perdeu cpu na fila seguinte. 
-        ultima_fila = processo.pcb.ultima_fila                           # Se estava na última fila antes de ser despachado, ele permanece nela.
+        ultima_fila = processo.ultima_fila                           # Se estava na última fila antes de ser despachado, ele permanece nela.
         if(ultima_fila == self.qtd_filas - 1):
             self.fila[ultima_fila].put(processo)
             return
@@ -61,7 +61,7 @@ class Escalonador:
     def inserir_processo_novo(self, processo: Processo) -> None:
         # Adicionar verificação de memória disponível aqui, para decidir se o processo vai pra fila de prontos ou pra fila de novos e esperar memória.
 
-        if processo.pcb.prioridade == 0:
+        if processo.prioridade == 0:
             self.prioridade0.adicionar_processo(processo)
             return
         self.prioridade1.adicionar_novo_processo(processo)
@@ -81,21 +81,21 @@ class Escalonador:
             self.inserir_processo_novo(processo);
         
     def inserir_processo_interrompido(self, processo: Processo) -> None:
-        if processo.pcb.status == Status.EXECUTANDO: # O porcesso foi interrompido por quantum, 
-            processo.pcb.status = Status.PRONTO # então ele deve ser reinserido na fila de prontos.
+        if processo.status == Status.EXECUTANDO: # O porcesso foi interrompido por quantum, 
+            processo.status = Status.PRONTO # então ele deve ser reinserido na fila de prontos.
             self.prioridade1.reinserir_processo_despachado(processo)
 
-        elif processo.pcb.status == Status.BLOQUEADO: # O processo foi bloqueado por E/S, 
+        elif processo.status == Status.BLOQUEADO: # O processo foi bloqueado por E/S, 
             self.bloqueados.append(processo) # então ele deve ser reinserido na lista de bloqueados.
         
-        elif processo.pcb.status == Status.FINALIZADO: # O processo finalizou a execução, 
+        elif processo.status == Status.FINALIZADO: # O processo finalizou a execução, 
             self.finalizados.append(processo) # então ele não deve ser inserido na lista de finalizados.
 
     def decrementar_tempo_bloqueados(self): # Chamada sempre que a cpu executa uma unidade de tempo,
         for processo in list(self.bloqueados):
             processo.decrementar_tempo_restante()
 
-            if processo.pcb.status == Status.PRONTO: # Acabou o tempo de bloqueio e está pronto para execução
+            if processo.status == Status.PRONTO: # Acabou o tempo de bloqueio e está pronto para execução
                 self.bloqueados.remove(processo)
                 self.prioridade1.reinserir_processo_despachado(processo)
 
@@ -121,5 +121,5 @@ class Despachante():
     
     def despachar(self, processo: Processo) -> Processo: # Dá prioridade para processos da fila0, que tem prioridade 0.
         if processo is not None:
-            processo.pcb.status = Status.EXECUTANDO
+            processo.status = Status.EXECUTANDO
         return processo

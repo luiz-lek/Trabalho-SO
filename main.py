@@ -17,12 +17,12 @@ def executar_processo_prioridade0(processo: Processo, escalonador: Escalonador):
 
 
 def executar_processo_prioridade1(processo: Processo, escalonador: Escalonador):
-    tempo = 2 ** processo.pcb.ultima_fila
+    tempo = 2 ** processo.ultima_fila
 
     for i in range(tempo):
         processo.decrementar_tempo_restante()
         escalonador.decrementar_tempo_bloqueados()
-        estado = processo.pcb.status
+        estado = processo.status
         if estado == Status.BLOQUEADO or estado == Status.FINALIZADO:
             break
 
@@ -51,7 +51,7 @@ def executar():
 
         despachante.despachar(processo)
 
-        if(processo.pcb.prioridade == 0):
+        if(processo.prioridade == 0):
             executar_processo_prioridade0(processo, escalonador)
         else:
             print(f"\n\nProcesso entrou no estado:\n{processo}")

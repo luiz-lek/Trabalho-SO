@@ -204,29 +204,3 @@ class DMA:
                 f"{chr(10).join(status_discos)}\n"
                 f"Fila de Espera (I/O): {fila_ids}\n"
                 f"---------------------")
-
-
-"""
-código para interrompar a CPU em caso de finalização de processo do DMA. Eu pensei e colocá-la na main
-para a implementação deste código eu pensei em fazer:
-
-Para cada processo que o DMA retornou, você olha o PCB.
-
-Se o processso for de Prioridade 1: Ele apenas volta para as filas de Feedback.
-
-Se for Prioridade 0 (A Interrupção): Você varre a sua lista de 4 CPUs.
-
-    Tem alguma CPU com estado Vazio? Se sim, alocar_processo nela.
-
-    Se não, procure uma CPU cujo processo atual tenha prioridade 1. Encontrou? Chame cpu.desalocar_processo(), devolva o processo interrompido para o escalonador, e aloque o seu VIP da Prioridade 0 nessa mesma CPU!
-
-Código:
-
-for processo in FinalizadosDMA:
-        if(processo.pcb.prioridade == 1):
-            #Aqui vai o código pra por o processo na fila de prontos
-        elif(processo.pcb.prioridade == 0):
-            for cpu in ListaCPUs:
-                if(CPU.processo.pcb.prioridade == 1):
-                    
-"""

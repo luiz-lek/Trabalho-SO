@@ -91,14 +91,6 @@ class Escalonador:
         elif processo.pcb.status == Status.FINALIZADO: # O processo finalizou a execução, 
             self.finalizados.append(processo) # então ele não deve ser inserido na lista de finalizados.
 
-    def decrementar_tempo_bloqueados(self): # Chamada sempre que a cpu executa uma unidade de tempo,
-        for processo in list(self.bloqueados):
-            processo.decrementar_tempo_restante()
-
-            if processo.pcb.status == Status.PRONTO: # Acabou o tempo de bloqueio e está pronto para execução
-                self.bloqueados.remove(processo)
-                self.prioridade1.reinserir_processo_despachado(processo)
-
 
 class Despachante():
 

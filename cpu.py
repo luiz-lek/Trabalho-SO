@@ -1,5 +1,5 @@
 from enum import Enum
-from processos import ProcessoIO, Status, ProcessoCPUBound
+from processos import Processo, ProcessoIO, ProcessoCPUBound, Status
 
 """
 Tarefas a fazer:
@@ -15,24 +15,24 @@ class Estado(Enum):
 class CPU:
     def __init__(self, id: int):
         self.id = id #identidade de cada CPU
-        self.processo: None | ProcessoCPUBound | ProcessoIO = None #Processo a ser executado dentro da CPU
+        self.processo: None | Processo = None #Processo a ser executado dentro da CPU
         self.unid_temp = 0 #contador a cada unidade de tempo percorrida
         self.estado = Estado.Vazio #Estado da CPU
 
 
-    def alocar_processo(self, processo: ProcessoIO | ProcessoCPUBound):
+    def alocar_processo(self, processo: Processo):
         """
         Tem o objetivo de:
             1. armazenar o processo, passado pelo parametro, dentro do nosso objeto CPU
             2. mudar o estado da nossa CPU para OCUPADA
-            3. mudar o estado do processo exexutado para EXECUTANDO
+            3. mudar o estado do processo executado para EXECUTANDO
         """
         self.processo = processo
         self.processo.pcb.status = Status.EXECUTANDO
         self.estado = Estado.Ocupado
 
 
-    def desalocar_processo(self) -> ProcessoIO | ProcessoCPUBound:
+    def desalocar_processo(self) -> Processo:
         """
         Tem o objetivo de:
             1. Retirar o processo dentro no nosso objeto CPU
@@ -42,7 +42,7 @@ class CPU:
         if(self.processo.pcb.status == Status.EXECUTANDO):
             self.processo.pcb.status = Status.PRONTO
 
-        copia: ProcessoCPUBound | ProcessoIO = self.processo;
+        copia: Processo = self.processo;
         self.processo = None
         self.estado = Estado.Vazio
         self.unid_temp = 0
@@ -62,7 +62,7 @@ class CPU:
         self.processo.atualizar_tempo_restante()
 
 
-    def interrupção(self) -> ProcessoIO | ProcessoCPUBound:
+    def interrupção(self) -> Processo:
         """
         Tem o objetivo de:
             1. interrompe o processo quando ele vai para o estado BLOQUEADO
@@ -96,7 +96,7 @@ class CPU:
             print("-----------------Interrupção: Processo Finalizado-----------------")
             return self.desalocar_processo()
         else:
-            return 
+            return None
         
 
     def inter_ProcessoCPUBound(self) -> ProcessoCPUBound: #Verifica o caso de interrupção para processos do tipo CPUBound
@@ -104,29 +104,17 @@ class CPU:
             print("-----------------Interrupção: Processo Finalizado-----------------")
             return self.desalocar_processo()
         else:
-            return
+            return None
         
     def __str__(self) -> str:
         if (self.processo == None):
             return f"CPU {self.id} está ociosa"
-        if(isinstance(self.processo, ProcessoIO)):
-            return (f"Processo: {self.processo.pcb.id}"
-                f"\n\tFase 1 CPU restante: {self.processo.tempo_restante_fase1_cpu}"
-                f"\n\tFase I/O restante: {self.processo.tempo_restante_fase_io}"
-                f"\n\tFase 2 CPU restante: {self.processo.tempo_restante_fase2_cpu}"
-                f"\n\tStatus: {self.processo.pcb.status.name}"
-                f"\n\tTamanho: {self.processo.tam} MiB")
-        elif(isinstance(self.processo, ProcessoCPUBound)):
-            return (f"Processo: {self.processo.pcb.id}" 
-                f"\n\tTempo de CPU restante: {self.processo.tempo_restante_cpu}"
-                f"\n\tStatus: {self.processo.pcb.status.name}"
-                f"\n\tPrioridade: {self.processo.pcb.prioridade}"
-                f"\n\tTamanho: {self.processo.tam} MiB")
+        return self.processo.__str__()
 
 class DMA:
     def __init__(self):
         # Representa fisicamente os 4 discos do sistema.
-        self.discos: list[ProcessoIO | None] = [None, None, None, None]
+        self.discos: list[ProcessoIO] = [None, None, None, None]
         self.estados_discos = [Estado.Vazio for _ in range(4)]
         
         # Fila para processos que chegaram bloqueados, mas não há disco livre no momento.
@@ -170,7 +158,7 @@ class DMA:
                 processo = self.discos[i]
                 
                 if processo is not None:
-                    processo.atualizar_tempo_restante()
+                    processo.decrementar_tempo_restante()
 
                     if processo.pcb.status == Status.PRONTO:
                         processos_concluidos.append(processo)
@@ -196,7 +184,7 @@ class DMA:
             else:
                 processo = self.discos[i]
                 if processo is not None:
-                    status_discos.append(f"Disco {i}: Processo {processo.pcb.id} (Faltam {processo.tempo_restante_fase_io} u.t.)")
+                    status_discos.append(f"Disco {i}: Processo {processo.pcb.id} (Faltam {processo.tempo_fase_io} u.t.)")
         
         fila_ids = [p.pcb.id for p in self.fila_espera]
         

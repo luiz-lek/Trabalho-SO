@@ -32,7 +32,7 @@ class MemoriaPrincipal:
         
         # Desaloca o processo da memória marcando o intervalo como vazio (0)
         fim_intervalo = p.pcb.pos_meoria + p.tam + 1
-        for i in range(p.pcb.pos_memoria, fim_intervalo):
+        for i in range(p.pos_memoria, fim_intervalo):
             self.alocacao[i] = 0
         
         self.processos.remove(p) # Remove o processo da lista de processos alocados

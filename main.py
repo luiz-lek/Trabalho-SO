@@ -22,8 +22,8 @@ def executar_processo_prioridade1(processo: Processo, escalonador: Escalonador):
     for i in range(tempo):
         processo.decrementar_tempo_restante()
         escalonador.decrementar_tempo_bloqueados()
-        estado = processo.status
-        if estado == Status.BLOQUEADO or estado == Status.FINALIZADO:
+        estado = processo.estado
+        if estado == Estado.BLOQUEADO or estado == Estado.FINALIZADO:
             break
 
     print(f"\n\nProcesso interrompido no estado:\n{processo}")

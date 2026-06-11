@@ -28,7 +28,7 @@ class CPU:
             3. mudar o estado do processo exexutado para EXECUTANDO
         """
         self.processo = processo
-        self.processo.status = Status.EXECUTANDO
+        self.processo.estado = Estado.EXECUTANDO
 
         if(processo.prioridade == 0):
             self.unid_temp = processo.get_tempo_execucao_restante()
@@ -43,10 +43,7 @@ class CPU:
         Tem o objetivo de:
             1. Retirar o processo dentro no nosso objeto CPU
             2. Mudar o estado da CPU para VAZIO
-            3. Quando desalocado por interrução por fatia de tempo, muda o estado do processo para PRONTO
         """
-        if(self.processo.status == Status.EXECUTANDO):
-            self.processo.status = Status.PRONTO
 
         copia: Processo = self.processo;
         self.processo = None
@@ -68,7 +65,7 @@ class CPU:
         self.processo.atualizar_tempo_restante()
 
 
-    def interrupção(self) -> Processo:
+    def interromper(self) -> Processo | None:
         """
         Tem o objetivo de:
             1. interrompe o processo quando ele vai para o estado BLOQUEADO
@@ -76,40 +73,25 @@ class CPU:
             3. interrompe o processo quando o processo CPUBound termina o tempo de execução
             4. interrompe o processo a cada quantum.
         """
-        if self.processo is None:
-            return
+        if self.processo is None or self.processo.prioridade == 0:
+            return None
 
-        if isinstance(self.processo, ProcessoIO):
-            resultado = self.inter_processoIO()
-            if resultado is not None:
-                return resultado
-                
-        elif isinstance(self.processo, ProcessoCPUBound):
-            resultado = self.inter_ProcessoCPUBound()
-            if resultado is not None:
-                return resultado
-
-        if self.unid_temp <= 0 and not self.processo.prioridade == 0: 
-            print("-----------------Interrupção: Fatia de tempo-----------------")
-            return self.desalocar_processo()
-        
-
-    def inter_processoIO(self) -> ProcessoIO | None: #Verifica os casos de interrupção para processos do tipo IO
-        if(self.processo.fase_io == True):
+        elif self.processo.fase == FaseProcesso.IO:
             print("-----------------Interrupção: Processo Bloqueado-----------------")
-            return self.desalocar_processo()
-        elif(self.processo.get_tempo_restante_execucao() == 0):
+            self.processo.estado = Estado.BLOQUEADO
+                
+        elif self.processo.get_tempo_restante_execucao() == 0:
             print("-----------------Interrupção: Processo Finalizado-----------------")
-            return self.desalocar_processo()
-        return None 
+            self.processo.estado = Estado.FINALIZADO
+
+        elif self.unid_temp <= 0: 
+            print("-----------------Interrupção: Fatia de tempo-----------------")
+            # Não foi bloqueado nem finalizado. Então, o processo volta para a fila de prontos.
+            self.processo.estado = Estado.PRONTO
+        
+        return self.desalocar_processo
         
 
-    def inter_ProcessoCPUBound(self) -> ProcessoCPUBound | None: #Verifica o caso de interrupção para processos do tipo CPUBound
-        if(self.processo.get_tempo_restante_execucao() == 0):
-            print("-----------------Interrupção: Processo Finalizado-----------------")
-            return self.desalocar_processo()
-        return None
-        
     def __str__(self) -> str:
         if (self.processo == None):
             return f"CPU {self.id} está ociosa"
@@ -164,7 +146,7 @@ class DMA:
                 if processo is not None:
                     processo.atualizar_tempo_restante()
 
-                    if processo.status == Status.PRONTO:
+                    if processo.tempo_fase_io <= 0:
                         processos_concluidos.append(processo)
                         
                         self.discos[i] = None

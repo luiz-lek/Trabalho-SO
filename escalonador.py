@@ -53,8 +53,8 @@ class Escalonador:
         self.novos = Queue()
         self.finalizados: list[Processo] = list()
         self.bloqueados: list[Processo] = list()
-        self.prioridade0 = politica_FCFS()
-        self.prioridade1 = politica_feed_back(QTD_FILAS_FEED_BACK)
+        self.fila_prioridade0 = politica_FCFS()
+        self.fila_prioridade1 = politica_feed_back(QTD_FILAS_FEED_BACK)
 
         self.memoria_principal = memoria_principal
 
@@ -62,15 +62,15 @@ class Escalonador:
         # Adicionar verificação de memória disponível aqui, para decidir se o processo vai pra fila de prontos ou pra fila de novos e esperar memória.
 
         if processo.prioridade == 0:
-            self.prioridade0.adicionar_processo(processo)
+            self.fila_prioridade0.adicionar_processo(processo)
             return
-        self.prioridade1.adicionar_novo_processo(processo)
+        self.fila_prioridade1.adicionar_novo_processo(processo)
 
     def selecionar_processo_para_execucao(self) -> Processo:
-        processo = self.prioridade0.retirar_processo()
+        processo = self.fila_prioridade0.retirar_processo()
         if processo is not None:
             return processo
-        return self.prioridade1.retirar_processo()
+        return self.fila_prioridade1.retirar_processo()
     
     def admitir_processo(self) -> None:
         if self.novos.esta_vazia():
@@ -81,23 +81,23 @@ class Escalonador:
             self.inserir_processo_novo(processo);
         
     def inserir_processo_interrompido(self, processo: Processo) -> None:
-        if processo.status == Status.EXECUTANDO: # O porcesso foi interrompido por quantum, 
-            processo.status = Status.PRONTO # então ele deve ser reinserido na fila de prontos.
-            self.prioridade1.reinserir_processo_despachado(processo)
+        if processo.estado == Estado.EXECUTANDO: # O porcesso foi interrompido por quantum, 
+            processo.estado = Estado.PRONTO # então ele deve ser reinserido na fila de prontos.
+            self.fila_prioridade1.reinserir_processo_despachado(processo)
 
-        elif processo.status == Status.BLOQUEADO: # O processo foi bloqueado por E/S, 
+        elif processo.estado == Estado.BLOQUEADO: # O processo foi bloqueado por E/S, 
             self.bloqueados.append(processo) # então ele deve ser reinserido na lista de bloqueados.
         
-        elif processo.status == Status.FINALIZADO: # O processo finalizou a execução, 
+        elif processo.estado == Estado.FINALIZADO: # O processo finalizou a execução, 
             self.finalizados.append(processo) # então ele não deve ser inserido na lista de finalizados.
 
-    def decrementar_tempo_bloqueados(self): # Chamada sempre que a cpu executa uma unidade de tempo,
-        for processo in list(self.bloqueados):
-            processo.decrementar_tempo_restante()
-
-            if processo.status == Status.PRONTO: # Acabou o tempo de bloqueio e está pronto para execução
+    def desbloquear_processo(self, id: int):   # Busca o id do processo,
+        for processo in list(self.bloqueados): # remove da lista de bloqueados e insere na de prontos.
+            if processo.id == id:
                 self.bloqueados.remove(processo)
-                self.prioridade1.reinserir_processo_despachado(processo)
+                processo.estado = Estado.PRONTO
+                self.fila_prioridade1.adicionar_novo_processo(processo)
+                break
 
 
 class Despachante():
@@ -121,5 +121,5 @@ class Despachante():
     
     def despachar(self, processo: Processo) -> Processo: # Dá prioridade para processos da fila0, que tem prioridade 0.
         if processo is not None:
-            processo.status = Status.EXECUTANDO
+            processo.estado = Estado.EXECUTANDO
         return processo

@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from enum import Enum, IntEnum
 
-class Estado(Enum):
+class EstadoProcesso(Enum):
     NOVO = 0
     PRONTO = 1
     EXECUTANDO = 2
@@ -20,7 +20,7 @@ class Processo(ABC):
         self.tam = tam_MiB
         self.id = id
         self.ultima_fila = None # Atributo para armazenar a última fila em que o processo estava antes de ser despachado pela política feed-back.
-        self.estado = Estado.NOVO
+        self.estado = EstadoProcesso.NOVO
         self.prioridade = prioridade
         self.pos_memoria = None
         self.fase = FaseProcesso.CPU1
@@ -59,7 +59,7 @@ class ProcessoIO(Processo):
         return self.tempo_fase1_cpu + self.tempo_fase_io + self.tempo_fase2_cpu
 
     def decrementar_tempo_restante(self) -> None: # Atualiza o tempo restante do processo após a CPU executar uma unidade de tempo, considerando a fase atual do processo.
-        if self.estado == Estado.FINALIZADO:
+        if self.estado == EstadoProcesso.FINALIZADO:
              raise RuntimeError("Processo já finalizou a execução.")
 
         funcao: callable = self.acoes.get(self.fase.value)
@@ -73,21 +73,21 @@ class ProcessoIO(Processo):
 
         if self.tempo_fase1_cpu <= 0:
             self.avancar_fase_execucao() # Avança para a próxima fase do processo, que no caso de um processo I/O-bound é a fase 2 de CPU.
-            print(f"\nProcesso {self.id} passou para a fase de E/S.")
+            # print(f"\nProcesso {self.id} passou para a fase de E/S.")
 
     def _decrementar_tempo_restante_fase_io(self) -> None:
         self.tempo_fase_io -= 1
 
         if self.tempo_fase_io <= 0:
             self.avancar_fase_execucao() # Avança para a próxima fase do processo, que no caso de um processo I/O-bound é a fase 2 de CPU.
-            print(f"\nProcesso {self.id} passou para a fase 2 de CPU.")
+            # print(f"\nProcesso {self.id} passou para a fase 2 de CPU.")
 
     def _decrementar_tempo_restante_fase2_cpu(self) -> None:
         self.tempo_fase2_cpu -= 1
 
         if self.tempo_fase2_cpu <= 0:
             self.avancar_fase_execucao() # Avança para a próxima fase do processo, que no caso de um processo I/O-bound é a fase de finalizado.
-            print(f"\nProcesso {self.id} finalizou a execução.")
+            # print(f"\nProcesso {self.id} finalizou a execução.")
 
     def __str__(self) -> str:
         return (f"\tID: {self.id}" 
@@ -111,13 +111,13 @@ class ProcessoCPUBound(Processo):
         self.tempo_cpu = tempo_cpu
 
     def decrementar_tempo_restante(self) -> None: # Atualiza após a cpu executar uma unidade de tempo.
-        if self.estado == Estado.FINALIZADO:
+        if self.estado == EstadoProcesso.FINALIZADO:
             raise RuntimeError("Processo já finalizou a execução.")
 
         self.tempo_cpu -= 1
         if self.tempo_cpu <= 0:
             self.fase = FaseProcesso.FINALIZADO
-            print(f"\nProcesso CPU-bound {self.id} finalizou a execução.\n")
+            # print(f"\nProcesso CPU-bound {self.id} finalizou a execução.\n")
 
     def get_tempo_execucao_restante(self) -> int:
         return self.tempo_cpu

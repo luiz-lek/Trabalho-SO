@@ -58,7 +58,7 @@ class Escalonador:
 
         self.memoria_principal = memoria_principal
 
-    def inserir_processo_novo(self, processo: Processo) -> None:
+    def escalonar_processo_novo(self, processo: Processo) -> None:
         # Adicionar verificação de memória disponível aqui, para decidir se o processo vai pra fila de prontos ou pra fila de novos e esperar memória.
 
         if processo.prioridade == 0:
@@ -66,7 +66,7 @@ class Escalonador:
             return
         self.fila_prioridade1.adicionar_novo_processo(processo)
 
-    def selecionar_processo_para_execucao(self) -> Processo:
+    def escalonar_processo_para_execucao(self) -> Processo:
         processo = self.fila_prioridade0.retirar_processo()
         if processo is not None:
             return processo
@@ -78,24 +78,22 @@ class Escalonador:
         
         processo = self.novos.get();
         if processo is not None:
-            self.inserir_processo_novo(processo);
+            self.escalonar_processo_novo(processo);
         
-    def inserir_processo_interrompido(self, processo: Processo) -> None:
-        if processo.estado == Estado.EXECUTANDO: # O porcesso foi interrompido por quantum, 
-            processo.estado = Estado.PRONTO # então ele deve ser reinserido na fila de prontos.
+    def escalonar_processo_interrompido(self, processo: Processo) -> None:
+        if processo.estado == EstadoProcesso.PRONTO: # então ele deve ser reinserido na fila de prontos.
             self.fila_prioridade1.reinserir_processo_despachado(processo)
 
-        elif processo.estado == Estado.BLOQUEADO: # O processo foi bloqueado por E/S, 
+        elif processo.estado == EstadoProcesso.BLOQUEADO: # O processo foi bloqueado por E/S, 
             self.bloqueados.append(processo) # então ele deve ser reinserido na lista de bloqueados.
         
-        elif processo.estado == Estado.FINALIZADO: # O processo finalizou a execução, 
+        elif processo.estado == EstadoProcesso.FINALIZADO: # O processo finalizou a execução, 
             self.finalizados.append(processo) # então ele não deve ser inserido na lista de finalizados.
 
-    def desbloquear_processo(self, id: int):   # Busca o id do processo,
+    def escalonar_processo_bloqueado(self, id: int):   # Busca o id do processo,
         for processo in list(self.bloqueados): # remove da lista de bloqueados e insere na de prontos.
             if processo.id == id:
                 self.bloqueados.remove(processo)
-                processo.estado = Estado.PRONTO
                 self.fila_prioridade1.adicionar_novo_processo(processo)
                 break
 
@@ -119,7 +117,7 @@ class Despachante():
             return ProcessoCPUBound(id, tempo_fase1_cpu + tempo_fase2_cpu, tam_MiB, prioridade)
         return ProcessoIO(id, tempo_fase1_cpu, tempo_fase_io, tempo_fase2_cpu, tam_MiB, prioridade)
     
-    def despachar(self, processo: Processo) -> Processo: # Dá prioridade para processos da fila0, que tem prioridade 0.
+    def despachar(self, processo: Processo, cpu: CPU) -> Processo: # Dá prioridade para processos da fila0, que tem prioridade 0.
         if processo is not None:
-            processo.estado = Estado.EXECUTANDO
+            cpu.alocar_processo(processo)
         return processo

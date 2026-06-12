@@ -32,7 +32,7 @@ class politica_feed_back:
         for i in range(self.qtd_filas):
             if not self.fila[i].empty():
                 processo = self.fila[i].get()
-                processo.pcb.ultima_fila = i
+                processo.ultima_fila = i
                 return processo
             
         return None
@@ -41,7 +41,7 @@ class politica_feed_back:
         self.fila[0].put(processo)
 
     def reinserir_processo_despachado(self, processo: Processo) -> None: # Insere um processo que perdeu cpu na fila seguinte. 
-        ultima_fila = processo.pcb.ultima_fila                           # Se estava na última fila antes de ser despachado, ele permanece nela.
+        ultima_fila = processo.ultima_fila                           # Se estava na última fila antes de ser despachado, ele permanece nela.
         if(ultima_fila == self.qtd_filas - 1):
             self.fila[ultima_fila].put(processo)
             return
@@ -53,24 +53,24 @@ class Escalonador:
         self.novos = Queue()
         self.finalizados: list[Processo] = list()
         self.bloqueados: list[Processo] = list()
-        self.prioridade0 = politica_FCFS()
-        self.prioridade1 = politica_feed_back(QTD_FILAS_FEED_BACK)
+        self.fila_prioridade0 = politica_FCFS()
+        self.fila_prioridade1 = politica_feed_back(QTD_FILAS_FEED_BACK)
 
         self.memoria_principal = memoria_principal
 
-    def inserir_processo_novo(self, processo: Processo) -> None:
+    def escalonar_processo_novo(self, processo: Processo) -> None:
         # Adicionar verificação de memória disponível aqui, para decidir se o processo vai pra fila de prontos ou pra fila de novos e esperar memória.
 
-        if processo.pcb.prioridade == 0:
-            self.prioridade0.adicionar_processo(processo)
+        if processo.prioridade == 0:
+            self.fila_prioridade0.adicionar_processo(processo)
             return
-        self.prioridade1.adicionar_novo_processo(processo)
+        self.fila_prioridade1.adicionar_novo_processo(processo)
 
-    def selecionar_processo_para_execucao(self) -> Processo:
-        processo = self.prioridade0.retirar_processo()
+    def escalonar_processo_para_execucao(self) -> Processo:
+        processo = self.fila_prioridade0.retirar_processo()
         if processo is not None:
             return processo
-        return self.prioridade1.retirar_processo()
+        return self.fila_prioridade1.retirar_processo()
     
     def admitir_processo(self) -> None:
         if self.novos.esta_vazia():
@@ -78,26 +78,24 @@ class Escalonador:
         
         processo = self.novos.get();
         if processo is not None:
-            self.inserir_processo_novo(processo);
+            self.escalonar_processo_novo(processo);
         
-    def inserir_processo_interrompido(self, processo: Processo) -> None:
-        if processo.pcb.status == Status.EXECUTANDO: # O porcesso foi interrompido por quantum, 
-            processo.pcb.status = Status.PRONTO # então ele deve ser reinserido na fila de prontos.
-            self.prioridade1.reinserir_processo_despachado(processo)
+    def escalonar_processo_interrompido(self, processo: Processo) -> None:
+        if processo.estado == EstadoProcesso.PRONTO: # então ele deve ser reinserido na fila de prontos.
+            self.fila_prioridade1.reinserir_processo_despachado(processo)
 
-        elif processo.pcb.status == Status.BLOQUEADO: # O processo foi bloqueado por E/S, 
+        elif processo.estado == EstadoProcesso.BLOQUEADO: # O processo foi bloqueado por E/S, 
             self.bloqueados.append(processo) # então ele deve ser reinserido na lista de bloqueados.
         
-        elif processo.pcb.status == Status.FINALIZADO: # O processo finalizou a execução, 
+        elif processo.estado == EstadoProcesso.FINALIZADO: # O processo finalizou a execução, 
             self.finalizados.append(processo) # então ele não deve ser inserido na lista de finalizados.
 
-    def decrementar_tempo_bloqueados(self): # Chamada sempre que a cpu executa uma unidade de tempo,
-        for processo in list(self.bloqueados):
-            processo.decrementar_tempo_restante()
-
-            if processo.pcb.status == Status.PRONTO: # Acabou o tempo de bloqueio e está pronto para execução
+    def escalonar_processo_bloqueado(self, id: int):   # Busca o id do processo,
+        for processo in list(self.bloqueados): # remove da lista de bloqueados e insere na de prontos.
+            if processo.id == id:
                 self.bloqueados.remove(processo)
-                self.prioridade1.reinserir_processo_despachado(processo)
+                self.fila_prioridade1.adicionar_novo_processo(processo)
+                break
 
 
 class Despachante():
@@ -119,7 +117,7 @@ class Despachante():
             return ProcessoCPUBound(id, tempo_fase1_cpu + tempo_fase2_cpu, tam_MiB, prioridade)
         return ProcessoIO(id, tempo_fase1_cpu, tempo_fase_io, tempo_fase2_cpu, tam_MiB, prioridade)
     
-    def despachar(self, processo: Processo) -> Processo: # Dá prioridade para processos da fila0, que tem prioridade 0.
+    def despachar(self, processo: Processo, cpu: CPU) -> Processo: # Dá prioridade para processos da fila0, que tem prioridade 0.
         if processo is not None:
-            processo.pcb.status = Status.EXECUTANDO
+            cpu.alocar_processo(processo)
         return processo

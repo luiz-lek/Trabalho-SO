@@ -4,10 +4,11 @@ from sistema_operacional import SistemaOperaciona
 from rich.traceback import install
 install()
 
-
 def main():
     so = SistemaOperaciona()
-    so.executar()
+    for i in range(30):
+        print(f"========================= Tique {i} =========================")
+        so.executar()
     # app = Application()
               
 if __name__ == "__main__":

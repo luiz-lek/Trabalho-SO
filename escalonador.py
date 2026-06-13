@@ -8,49 +8,49 @@ QTD_FILAS_FEED_BACK = 3
 class politica_FCFS:
 
     def __init__(self):
-        self.fila = Queue()
+        self.fila: list[Processo] = list()
 
     def adicionar_processo(self, processo: Processo) -> None:
-        self.fila.put(processo)
+        self.fila.append(processo)
 
     def retirar_processo(self) -> Processo:
-        if self.fila.empty():
+        if len(self.fila) == 0:
             return None
-        return self.fila.get()
+        return self.fila.pop(0)
     
 class politica_feed_back:
 
     def __init__(self, qtd_filas: int):
-        self.fila: list[Queue] = []
+        self.fila: list[list[Processo]] = list()
         self.qtd_filas = qtd_filas
 
         for i in range(self.qtd_filas):
-            fila_i = Queue()
+            fila_i = list()
             self.fila.append(fila_i)
 
     def retirar_processo(self) -> Processo: # Retorna o processo
         for i in range(self.qtd_filas):
-            if not self.fila[i].empty():
-                processo = self.fila[i].get()
+            if len(self.fila[i]) != 0:
+                processo = self.fila[i].pop(0)
                 processo.ultima_fila = i
                 return processo
             
         return None
         
     def adicionar_novo_processo(self, processo: Processo) -> None: # Processos novos sempre entram na fila 0.
-        self.fila[0].put(processo)
+        self.fila[0].append(processo)
 
     def reinserir_processo_despachado(self, processo: Processo) -> None: # Insere um processo que perdeu cpu na fila seguinte. 
         ultima_fila = processo.ultima_fila                           # Se estava na última fila antes de ser despachado, ele permanece nela.
         if(ultima_fila == self.qtd_filas - 1):
-            self.fila[ultima_fila].put(processo)
+            self.fila[ultima_fila].append(processo)
             return
-        self.fila[ultima_fila + 1].put(processo)
+        self.fila[ultima_fila + 1].append(processo)
     
 class Escalonador:
     
     def __init__(self): # Adicionar o tipo da memória assim que implementado.
-        self.novos = Queue()
+        self.novos: list[Processo] = list()
         self.finalizados: list[Processo] = list()
         self.bloqueados: list[Processo] = list()
         self.fila_processos_tempo_real = politica_FCFS()
@@ -63,12 +63,12 @@ class Escalonador:
         self.fila_processos_usuario.adicionar_novo_processo(processo)
 
     def enfileirar_processo_novo(self, processo: Processo) -> None:
-        self.novos.put(processo)
+        self.novos.append(processo)
 
     def retirar_proximo_novo(self) -> Processo | None:
-        if self.novos.empty():
+        if len(self.novos) == 0:
             return None
-        return self.novos.get()
+        return self.novos.pop(0)
         
     def selecionar_proximo_processo(self) -> Processo:
         processo = self.fila_processos_tempo_real.retirar_processo()
@@ -88,9 +88,31 @@ class Escalonador:
 
     def desbloquer_processo(self, processo: Processo):
         # Desbloqueia processo que terminou I/O
-
         self.bloqueados.remove(processo)
         self.fila_processos_usuario.adicionar_novo_processo(processo)
+
+    def __str__(self) -> str:
+        # Pega os IDs diretamente iterando pelas listas
+        ids_novos = [p.id for p in self.novos]
+        ids_bloqueados = [p.id for p in self.bloqueados]
+        ids_finalizados = [p.id for p in self.finalizados]
+
+        # Fila do FCFS
+        ids_tempo_real = [p.id for p in self.fila_processos_tempo_real.fila]
+
+        # Monta a representação das filas de usuário (Feed-back)
+        filas_usuario_str = ""
+        for i in range(self.fila_processos_usuario.qtd_filas):
+            ids_na_fila = [p.id for p in self.fila_processos_usuario.fila[i]]
+            filas_usuario_str += f"\n\tFila {i}: {ids_na_fila}"
+
+        return (f"--- Estado do Escalonador ---"
+                f"\nNovos: {ids_novos}"
+                f"\nProntos (Tempo Real)\n\tFila: {ids_tempo_real}"
+                f"\nProntos (Usuário): {filas_usuario_str}"
+                f"\nBloqueados: {ids_bloqueados}"
+                f"\nFinalizados: {ids_finalizados}"
+                f"\n-----------------------------")
 
 
 class Despachante():

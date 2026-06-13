@@ -22,12 +22,11 @@ class SistemaOperaciona:
             self.escalonador.enfileirar_processo_novo(processo)
 
     def executar(self) -> None:
-        for i in range(21):
-            print(f"\n--- Tique {i} ---")
-            self.clock_cpus()
-            processos_desbloqueados = self.dma.clock()
-            for processo_concluido in processos_desbloqueados:
-                self.escalonador.desbloquer_processo(processo_concluido)
+        self.clock_cpus()
+        processos_desbloqueados: list[ProcessoIO] | None = self.dma.clock()
+        for processo_concluido in processos_desbloqueados:
+            self.escalonador.desbloquer_processo(processo_concluido)
+        print(f"\n{self.escalonador}\n")
 
     def clock_cpus(self) -> None:
         '''
@@ -37,9 +36,9 @@ class SistemaOperaciona:
         '''
         processos_perderam_cpu: list[Processo] = list()
 
-        # Gera um pulso de cock nas 4 cpus
+        # Gera um pulso de clock nas 4 cpus
         for cpu in self.cpus:
-            # Escalona um novo processo se ela estiver livre
+            # Seleciona um novo processo se ela estiver livre
             if cpu.estado == Estado.Vazio:
                 processo = self.escalonador.selecionar_proximo_processo()
                 self.despachante.despachar(processo, cpu)

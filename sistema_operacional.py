@@ -1,3 +1,4 @@
+import threading
 import time
 
 import escalonador
@@ -9,16 +10,20 @@ from cpu import *
 
 class SistemaOperaciona:
 
-    def __init__(self):
+    def __init__(self, processos: list[Processo] | None = None) -> None:
         # Todos os componentes do sistema operacional.
+        self.lock = threading.Lock() # Lock para sincronizar o acesso à lista de processos entre o sistema operacional e a GUI.
         self.memoria_principal = MemoriaPrincipal()
         self.escalonador = Escalonador(self.memoria_principal)
         self.despachante = Despachante()
         self.cpus: list[CPU] = [CPU(i) for i in range(4)]
         self.dma = DMA()
 
-        processos = alistaProcessos("entrada.txt", self.despachante)
-        for processo in processos:
+        self.processos = processos if processos is not None else [] #pra guardar a referência da lista de processos, caso seja passada como argumento, para que a GUI possa acessar os processos do sistema operacional.
+
+        processos_lidos = alistaProcessos("entrada.txt", self.despachante)
+        for processo in processos_lidos:
+            self.processos.append(processo) #Popula a lista
             self.escalonador.escalonar_processo_novo(processo)
 
     def executar(self) -> None:
@@ -28,6 +33,8 @@ class SistemaOperaciona:
             processos_desbloqueados = self.dma.clock()
             for processo_concluido in processos_desbloqueados:
                 self.escalonador.escalonar_processo_bloqueado(processo_concluido.id)
+
+    
 
     def clock_cpus(self) -> None:
         '''

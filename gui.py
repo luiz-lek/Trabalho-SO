@@ -1,11 +1,17 @@
 from tkinter import *
 from tkinter.ttk import Treeview 
 from tkinter.ttk import Style
+from processos import *
 
 
 class Application:
 
-    def __init__(self):
+    def __init__(self, so=None):
+        self.so=so
+        self.processos = so.processos if so else []
+        self.despachante = so.despachante if so else None
+        self.lock = so.lock if so else None
+
         self.window = Tk() #cria a janela
         #Configurações da janela
         self.altura = int(self.window.winfo_screenheight() * 0.75) #Altura
@@ -98,12 +104,6 @@ class processMakingScreen(Frame):
         self.columnconfigure(6, weight=1)
         self.pack(fill=BOTH, expand=True)
 
-        #ID do processo
-        Label(self, text="PID", bg="#000000", fg="#07D2EC", 
-            font=("Courier", 10)).grid(row=0, column=0, padx=10, pady=8, sticky="w")
-        self.entry_pid = Entry(self, bg="#111111", fg="#07D2EC", insertbackground="#07D2EC")
-        self.entry_pid.grid(row=1, column=0, padx=10, pady=8, sticky="w")
-
         #Tempo CPU 1
         Label(self, text="Tempo CPU 1", bg="#000000", fg="#07D2EC", 
             font=("Courier", 10)).grid(row=2, column=0, padx=10, pady=8, sticky="w")
@@ -135,17 +135,14 @@ class processMakingScreen(Frame):
 
 
     def processMaker(self):
-        print("Salvando processo...")
-        numero = self.entry_pid.get()
-        tempo_cpu1 = self.entry_cpu1.get()
-        tempo_cpu2 = self.entry_cpu2.get()
-        tempo_io = self.entry_io.get()
-        tamanho_memoria = self.entry_memoria.get()
-        print(f"infos: {numero} {tempo_cpu1} {tempo_cpu2} {tempo_io} {tamanho_memoria}")
-        
         try:
-            with open("entrada.txt", "a") as f:
-                f.write(f"{numero}, {tempo_cpu1}, {tempo_io}, {tempo_cpu2}, {tamanho_memoria}\n")
+            processo = self.app.despachante.criar_processo(
+                int(self.entry_cpu1.get()),
+                int(self.entry_cpu2.get()),
+                int(self.entry_io.get()),
+                int(self.entry_memoria.get())
+            )
+            self.app.processos.append(processo)
         except Exception as e:
             print(f"Erro ao salvar processo: {e}")
 
@@ -186,13 +183,23 @@ class processListScreen(Frame):
         tabela.column("cpu2", width=120)
         tabela.column("memoria", width=180)
 
-        try:
-            with open("entrada.txt", "r") as f:
-                for linha in f.readlines():
-                    valores = linha.strip().split(",")
-                    tabela.insert("", END, values=valores)
-        except Exception as e:
-            print(f"Erro ao ler processos: {e}")
+        for processo in self.app.processos:
+            if(isinstance(processo, ProcessoIO)):
+                cpu1 = processo.tempo_fase1_cpu
+                io = processo.tempo_fase_io
+                cpu2 = processo.tempo_fase2_cpu
+            else:
+                cpu1 = processo.tempo_cpu
+                io = "-"
+                cpu2 = "-"
+            
+            tabela.insert("", "end", values=(
+                processo.id,
+                cpu1,
+                io,
+                cpu2,
+                processo.tam
+            ))
 
 class processSchedulingScreen(Frame):
 

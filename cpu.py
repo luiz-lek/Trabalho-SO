@@ -152,7 +152,7 @@ class DMA:
 
             if lista_discos is None:
                 self.fila_espera.append(processo)
-                return
+                continue
             
             for indice_disco in lista_discos:
                 self.discos[indice_disco] = processo
@@ -184,20 +184,26 @@ class DMA:
         Retorna uma lista de processos que terminaram o I/O neste exato tique,
         para que o main.py possa devolvê-los ao Escalonador.
         """
+
+        print(f"DMA [fila de espera]: ", end=" ")
+        for processo in  self.fila_espera:
+            print(f"{processo.id}", end=" ")
+        print()
+
         processos_concluidos: list[ProcessoIO] = []
-        processo_executados = set()
+        processos_executados = set()
 
         for i in range(4):
             processo = self.discos[i]
 
-            if (processo is None) or (processo in processo_executados):
+            if (processo is None) or (processo in processos_executados):
                 continue
 
-            processo.atualizar_tempo_restante()
-            processo_executados.add(processo)
+            processo.decrementar_tempo_restante()
+            processos_executados.add(processo)
 
             if processo.tempo_fase_io <= 0:
-                processo.estado = Estado.PRONTO
+                processo.estado = EstadoProcesso.PRONTO
                 processos_concluidos.append(processo)
                 self.liberar_discos(processo)
         

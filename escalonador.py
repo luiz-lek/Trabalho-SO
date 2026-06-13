@@ -65,7 +65,9 @@ class Escalonador:
     def enfileirar_processo_novo(self, processo: Processo) -> None:
         self.novos.put(processo)
 
-    def retirar_proximo_novo(self) -> Processo:
+    def retirar_proximo_novo(self) -> Processo | None:
+        if self.novos.empty():
+            return None
         return self.novos.get()
         
     def selecionar_proximo_processo(self) -> Processo:

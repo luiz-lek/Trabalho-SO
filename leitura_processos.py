@@ -10,7 +10,6 @@ def alistaProcessos(nome_arquivo: str, despachante: Despachante) -> list[Process
     for linha in linhas_arquivo:
         try:
             processo = leProcesso(linha, despachante) # Lê um processo da linha do arquivo
-            # print(f"\nProcesso lido: {processo}") # Imprime o processo lido para verificação
             processos.append(processo) # Adiciona o processo à lista de processos
         except (ValueError) as e:
             print(f"Erro ao ler processo da linha '{linha.strip()}'")
@@ -30,7 +29,8 @@ def leProcesso(linhaProcesso: str, despachante: Despachante) -> Processo:
             int(partes[1]),  # durIO
             int(partes[2]),  # durCpu2
             int(partes[3]),  # tam
-            int(partes[4])   # prioridade
+            int(partes[4]),  # qtd de discos solicitados
+            int(partes[5])   # prioridade
         )
         return processo
     except (ValueError) as e:

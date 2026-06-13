@@ -1,5 +1,6 @@
 from enum import Enum
 from processos import *
+from queue import Queue
 
 """
 Tarefas a fazer:
@@ -126,7 +127,6 @@ class DMA:
     def __init__(self):
         # Representa fisicamente os 4 discos do sistema.
         self.discos: list[ProcessoIO | None] = [None, None, None, None]
-        self.estados_discos = [Estado.Vazio for _ in range(4)]
         
         # Fila para processos que chegaram bloqueados, mas não há disco livre no momento.
         self.fila_espera: list[ProcessoIO] = []
@@ -140,49 +140,84 @@ class DMA:
         self.fila_espera.append(processo)
         self._alocar_nos_discos()
 
-
     def _alocar_nos_discos(self) -> None:
-        """
-        Método interno (privado) que move os processos da fila de espera 
-        para os discos que estiverem com o estado Vazio.
-        """
-        for i in range(4):
-            if self.estados_discos[i] == Estado.Vazio and len(self.fila_espera) > 0:
-                # Remove o primeiro processo da fila (posição 0) e coloca no disco
-                processo_para_alocar = self.fila_espera.pop(0)
-                
-                self.discos[i] = processo_para_alocar
-                self.estados_discos[i] = Estado.Ocupado
-                print(f"DMA: Processo {processo_para_alocar.id} iniciou I/O no Disco {i}.")
+        tam_fila = len(self.fila_espera)
 
+        for _ in range (tam_fila):
+            if len(self.fila_espera) == 0:
+                return
+            
+            processo: ProcessoIO = self.fila_espera.pop(0)
+            lista_discos = self.verificar_discos_disponiveis(processo.qtd_discos)
 
+            if lista_discos is None:
+                self.fila_espera.append(processo)
+                continue
+            
+            for indice_disco in lista_discos:
+                self.discos[indice_disco] = processo
+
+    def verificar_discos_disponiveis(self, qtd_solicitada: int) -> list[int] | None:
+        '''
+            Retorna a lista com o índice no vetor de discos para o processor alocar.
+            Se não tiver a quantidade desejada, retorna None.
+        '''
+
+        lista_disponveis: list[int] = []
+        qtd_disponivel = 0
+
+        for i in range(len(self.discos)):
+            if self.discos[i] is not None:
+                continue
+            lista_disponveis.append(i)
+            qtd_disponivel+=1
+            if qtd_disponivel == qtd_solicitada:
+                break
+
+        if len(lista_disponveis) == qtd_solicitada:
+            return lista_disponveis
+        return None
+    
     def clock(self) -> list[ProcessoIO]:
         """
         Avança o tempo de I/O de todos os processos que estão atualmente nos discos.
         Retorna uma lista de processos que terminaram o I/O neste exato tique,
         para que o main.py possa devolvê-los ao Escalonador.
         """
+
+        print(f"DMA [fila de espera]: ", end=" ")
+        for processo in  self.fila_espera:
+            print(f"{processo.id}", end=" ")
+        print()
+
         processos_concluidos: list[ProcessoIO] = []
+        processos_executados = set()
 
         for i in range(4):
-            if self.estados_discos[i] == Estado.Ocupado:
-                processo = self.discos[i]
-                
-                if processo is not None:
-                    processo.atualizar_tempo_restante()
+            processo = self.discos[i]
 
-                    if processo.tempo_fase_io <= 0:
-                        processo.estado = Estado.PRONTO
-                        processos_concluidos.append(processo)
-                        
-                        self.discos[i] = None
-                        self.estados_discos[i] = Estado.Vazio
-                        print(f"DMA: Processo {processo.id} liberou o Disco {i}.")
+            if (processo is None) or (processo in processos_executados):
+                continue
 
-        self._alocar_nos_discos()
+            processo.decrementar_tempo_restante()
+            processos_executados.add(processo)
+
+            if processo.tempo_fase_io <= 0:
+                processo.estado = EstadoProcesso.PRONTO
+                processos_concluidos.append(processo)
+                self.liberar_discos(processo)
         
+        self._alocar_nos_discos()
         return processos_concluidos
     
+    def liberar_discos(self, processo: Processo):
+        # Libera tds os discos que ele está ocupando
+        print(f"DMA: Processo {processo.id} liberou o Disco(s) ", end="")
+        for i in range (len(self.discos)):
+            if self.discos[i] is processo:
+                self.discos[i] = None
+                print(f"{i} ", end="")
+        print()
 
     def __str__(self) -> str:
         """
@@ -191,7 +226,7 @@ class DMA:
         """
         status_discos = []
         for i in range(4):
-            if self.estados_discos[i] == Estado.Vazio:
+            if self.discos[i] is None:
                 status_discos.append(f"Disco {i}: Vazio")
             else:
                 processo = self.discos[i]
@@ -204,26 +239,3 @@ class DMA:
                 f"{chr(10).join(status_discos)}\n"
                 f"Fila de Espera (I/O): {fila_ids}\n"
                 f"---------------------")
-    
-
-"""
-código para interrompar a CPU em caso de finalização de processo do DMA. Eu pensei e colocá-la na main
-para a implementação deste código eu pensei em fazer:
-
-
-for processo in FinalizadosDMA: #FinalizadosDMA é a fila de processos que tenha terminado sua execução no DMA
-    fila.adicionar_processo(processo) #não sei se essa é a função para adicionar o processo a fista
-
-quant_cpu_interrompida = len(FinalizadosDMA) #quantidade de processo finalizados no DMA
-
-for cpu in CPUs:
-    if(quant_cpu_interrompida == 0): #se não tiver processo finalizado pelo DMA, então nenhuma CPU será interrompida
-        break;
-    if(cpu.processo is None):
-        continue
-    if(cpu.processo.pioridade == 1): #As CPUs devem ficar um uma lista contendo todas as 4 CPUs
-        process_interrompido = cpu.desalocar_processo();    
-        flia.adicionar_processo(processo_interompido);
-        quant_cpu_interrompida -= 1;
-
-"""

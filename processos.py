@@ -36,12 +36,13 @@ class Processo(ABC):
 
 class ProcessoIO(Processo):
     
-    def __init__(self, id: int, tempo_fase1_cpu: int, tempo_fase_io: int, tempo_fase2_cpu: int, tam_MiB: int, prioridade: int):    
+    def __init__(self, id: int, tempo_fase1_cpu: int, tempo_fase_io: int, tempo_fase2_cpu: int, tam_MiB: int, qtd_discos: int, prioridade: int):    
         super().__init__(id, tam_MiB, prioridade)
         
         self.tempo_fase1_cpu = tempo_fase1_cpu
         self.tempo_fase_io = tempo_fase_io
         self.tempo_fase2_cpu = tempo_fase2_cpu
+        self.qtd_discos = qtd_discos
 
         self.acoes: dict[int, callable] = { # Dicionário para mapear cada fase do processo à função correspondente de atualização do tempo restante.
             FaseProcesso.CPU1: self._decrementar_tempo_restante_fase1_cpu,
@@ -96,6 +97,7 @@ class ProcessoIO(Processo):
                 f"\n\tFase 2 CPU restante: {self.tempo_fase2_cpu}"
                 f"\n\tStatus: {self.estado.name}"
                 f"\n\tPrioridade: {self.prioridade}"
+                f"\n\tDiscos alocados: {self.qtd_discos}
                 f"\n\tÚltima fila: {self.ultima_fila}"
                 f"\n\tID: {self.id}"
                 f"\n\tTamanho: {self.tam} MiB")

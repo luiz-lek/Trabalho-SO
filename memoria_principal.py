@@ -41,16 +41,3 @@ class MemoriaPrincipal:
                 return i
                 
         return None
-
-    def desalocar(self, p: Processo):
-        if p not in self.processos:
-            print(f"Processo {p.id} não encontrado na memória.")
-            return
-        
-        # Desaloca o processo da memória marcando o intervalo como vazio (0)
-        fim_intervalo = p.pos_memoria + p.tam + 1
-        for i in range(p.pos_memoria, fim_intervalo):
-            self.alocacao[i] = -1
-        
-        self.processos.remove(p) # Remove o processo da lista de processos alocados
-        print(f"Processo {p.id} desalocado da memória do intervalo correspondente")

@@ -1,5 +1,5 @@
 from processos import *
-from cpu import CPU
+from cpu import *
 from queue import Queue
 from memoria_principal import MemoriaPrincipal
 
@@ -49,40 +49,34 @@ class politica_feed_back:
     
 class Escalonador:
     
-    def __init__(self, memoria_principal: MemoriaPrincipal): # Adicionar o tipo da memória assim que implementado.
+    def __init__(self): # Adicionar o tipo da memória assim que implementado.
         self.novos = Queue()
         self.finalizados: list[Processo] = list()
         self.bloqueados: list[Processo] = list()
-        self.fila_prioridade0 = politica_FCFS()
-        self.fila_prioridade1 = politica_feed_back(QTD_FILAS_FEED_BACK)
+        self.fila_processos_tempo_real = politica_FCFS()
+        self.fila_processos_usuario = politica_feed_back(QTD_FILAS_FEED_BACK)
 
-        self.memoria_principal = memoria_principal
-
-    def escalonar_processo_novo(self, processo: Processo) -> None:
-        # Adicionar verificação de memória disponível aqui, para decidir se o processo vai pra fila de prontos ou pra fila de novos e esperar memória.
-
+    def admitir_processo(self, processo: Processo) -> None:
         if processo.prioridade == 0:
-            self.fila_prioridade0.adicionar_processo(processo)
+            self.fila_processos_tempo_real.adicionar_processo(processo)
             return
-        self.fila_prioridade1.adicionar_novo_processo(processo)
+        self.fila_processos_usuario.adicionar_novo_processo(processo)
 
-    def escalonar_processo_para_execucao(self) -> Processo:
-        processo = self.fila_prioridade0.retirar_processo()
+    def enfileirar_processo_novo(self, processo: Processo) -> None:
+        self.novos.put(processo)
+
+    def retirar_proximo_novo(self) -> Processo:
+        return self.novos.get()
+        
+    def selecionar_proximo_processo(self) -> Processo:
+        processo = self.fila_processos_tempo_real.retirar_processo()
         if processo is not None:
             return processo
-        return self.fila_prioridade1.retirar_processo()
-    
-    def admitir_processo(self) -> None:
-        if self.novos.esta_vazia():
-            return
+        return self.fila_processos_usuario.retirar_processo()
         
-        processo = self.novos.get();
-        if processo is not None:
-            self.escalonar_processo_novo(processo);
-        
-    def escalonar_processo_interrompido(self, processo: Processo) -> None:
+    def tratar_retorno_cpu(self, processo: Processo) -> None:
         if processo.estado == EstadoProcesso.PRONTO: # então ele deve ser reinserido na fila de prontos.
-            self.fila_prioridade1.reinserir_processo_despachado(processo)
+            self.fila_processos_usuario.reinserir_processo_despachado(processo)
 
         elif processo.estado == EstadoProcesso.BLOQUEADO: # O processo foi bloqueado por E/S, 
             self.bloqueados.append(processo) # então ele deve ser reinserido na lista de bloqueados.
@@ -90,12 +84,11 @@ class Escalonador:
         elif processo.estado == EstadoProcesso.FINALIZADO: # O processo finalizou a execução, 
             self.finalizados.append(processo) # então ele não deve ser inserido na lista de finalizados.
 
-    def escalonar_processo_bloqueado(self, id: int):   # Busca o id do processo,
-        for processo in list(self.bloqueados): # remove da lista de bloqueados e insere na de prontos.
-            if processo.id == id:
-                self.bloqueados.remove(processo)
-                self.fila_prioridade1.adicionar_novo_processo(processo)
-                break
+    def desbloquer_processo(self, processo: Processo):
+        # Desbloqueia processo que terminou I/O
+
+        self.bloqueados.remove(processo)
+        self.fila_processos_usuario.adicionar_novo_processo(processo)
 
 
 class Despachante():
@@ -107,7 +100,7 @@ class Despachante():
         self._id_atual += 1
         return self._id_atual
 
-    def criar_processo(self, tempo_fase1_cpu: int, tempo_fase_io: int, tempo_fase2_cpu: int, tam_MiB: int, prioridade: int) -> Processo:
+    def criar_processo(self, tempo_fase1_cpu: int, tempo_fase_io: int, tempo_fase2_cpu: int, tam_MiB: int, qtd_discos: int, prioridade: int) -> Processo:
         if tempo_fase1_cpu < 0 or tempo_fase2_cpu < 0 or tempo_fase_io < 0:
             raise ValueError("Tempos de CPU e E/S devem ser valores não negativos");
     
@@ -115,9 +108,9 @@ class Despachante():
     
         if tempo_fase_io == 0: # Se o processo não tem fase de E/S, ele é CPU-bound e pode ser tratado como um processo único de CPU.
             return ProcessoCPUBound(id, tempo_fase1_cpu + tempo_fase2_cpu, tam_MiB, prioridade)
-        return ProcessoIO(id, tempo_fase1_cpu, tempo_fase_io, tempo_fase2_cpu, tam_MiB, prioridade)
+        return ProcessoIO(id, tempo_fase1_cpu, tempo_fase_io, tempo_fase2_cpu, tam_MiB, qtd_discos, prioridade)
     
-    def despachar(self, processo: Processo, cpu: CPU) -> Processo: # Dá prioridade para processos da fila0, que tem prioridade 0.
+    def despachar(self, processo: Processo, cpu: CPU) -> Processo:
         if processo is not None:
             cpu.alocar_processo(processo)
         return processo

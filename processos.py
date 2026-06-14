@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from enum import Enum, IntEnum
 
-class Status(Enum):
+class EstadoProcesso(Enum):
     NOVO = 0
     PRONTO = 1
     EXECUTANDO = 2
@@ -12,12 +12,18 @@ class FaseProcesso(IntEnum):
     CPU1 = 0
     IO = 1
     CPU2 = 2
+    FINALIZADO = 3
 
 class Processo(ABC):
 
     def __init__(self, id: int, tam_MiB: int, prioridade: int):
-        self.pcb = PCB(id, prioridade)
         self.tam = tam_MiB
+        self.id = id
+        self.ultima_fila = None # Atributo para armazenar a última fila em que o processo estava antes de ser despachado pela política feed-back.
+        self.estado = EstadoProcesso.NOVO
+        self.prioridade = prioridade
+        self.pos_memoria = None
+        self.fase = FaseProcesso.CPU1
 
     @abstractmethod
     def decrementar_tempo_restante(self) -> None:
@@ -30,13 +36,13 @@ class Processo(ABC):
 
 class ProcessoIO(Processo):
     
-    def __init__(self, id: int, tempo_fase1_cpu: int, tempo_fase_io: int, tempo_fase2_cpu: int, tam_MiB: int, prioridade: int):    
+    def __init__(self, id: int, tempo_fase1_cpu: int, tempo_fase_io: int, tempo_fase2_cpu: int, tam_MiB: int, qtd_discos: int, prioridade: int):    
         super().__init__(id, tam_MiB, prioridade)
         
         self.tempo_fase1_cpu = tempo_fase1_cpu
         self.tempo_fase_io = tempo_fase_io
         self.tempo_fase2_cpu = tempo_fase2_cpu
-        self.fase = FaseProcesso.CPU1
+        self.qtd_discos = qtd_discos
 
         self.acoes: dict[int, callable] = { # Dicionário para mapear cada fase do processo à função correspondente de atualização do tempo restante.
             FaseProcesso.CPU1: self._decrementar_tempo_restante_fase1_cpu,
@@ -45,17 +51,16 @@ class ProcessoIO(Processo):
         }
 
     def avancar_fase_execucao(self) -> None:
-        if self.fase < FaseProcesso.CPU2:
+        if self.fase < FaseProcesso.FINALIZADO:
             self.fase = FaseProcesso(self.fase.value + 1) # Atualiza a fase do processo para a próxima fase, avançando na ordem CPU1 -> IO -> CPU2.
         else:
             raise RuntimeError("Processo já finalizou a execução.")
-        
     
     def get_tempo_execucao_restante(self) -> int: # Retorna o tempo total restante para a execução completa do processo, considerando as três fases.
         return self.tempo_fase1_cpu + self.tempo_fase_io + self.tempo_fase2_cpu
 
     def decrementar_tempo_restante(self) -> None: # Atualiza o tempo restante do processo após a CPU executar uma unidade de tempo, considerando a fase atual do processo.
-        if self.pcb.status == Status.FINALIZADO:
+        if self.estado == EstadoProcesso.FINALIZADO:
              raise RuntimeError("Processo já finalizou a execução.")
 
         funcao: callable = self.acoes.get(self.fase.value)
@@ -64,39 +69,37 @@ class ProcessoIO(Processo):
         else:            
             raise RuntimeError("Fase do processo inválida.")
 
-        
     def _decrementar_tempo_restante_fase1_cpu(self) -> None:
         self.tempo_fase1_cpu -= 1
 
         if self.tempo_fase1_cpu <= 0:
             self.avancar_fase_execucao() # Avança para a próxima fase do processo, que no caso de um processo I/O-bound é a fase 2 de CPU.
-            self.pcb.status = Status.BLOQUEADO
-            print(f"\nProcesso {self.pcb.id} passou para a fase de E/S e foi bloqueado.")
+            # print(f"\nProcesso {self.id} passou para a fase de E/S.")
 
     def _decrementar_tempo_restante_fase_io(self) -> None:
         self.tempo_fase_io -= 1
 
         if self.tempo_fase_io <= 0:
             self.avancar_fase_execucao() # Avança para a próxima fase do processo, que no caso de um processo I/O-bound é a fase 2 de CPU.
-            self.pcb.status = Status.PRONTO
-            print(f"\nProcesso {self.pcb.id} passou para a fase 2 de CPU e está pronto para execução.")
+            # print(f"\nProcesso {self.id} passou para a fase 2 de CPU.")
 
     def _decrementar_tempo_restante_fase2_cpu(self) -> None:
         self.tempo_fase2_cpu -= 1
 
         if self.tempo_fase2_cpu <= 0:
-            self.pcb.status = Status.FINALIZADO
-            print(f"\nProcesso {self.pcb.id} finalizou a execução.")
+            self.avancar_fase_execucao() # Avança para a próxima fase do processo, que no caso de um processo I/O-bound é a fase de finalizado.
+            # print(f"\nProcesso {self.id} finalizou a execução.")
 
     def __str__(self) -> str:
-        return (f"\tID: {self.pcb.id}" 
+        return (f"\tID: {self.id}" 
                 f"\n\tFase 1 CPU restante: {self.tempo_fase1_cpu}"
                 f"\n\tFase I/O restante: {self.tempo_fase_io}"
                 f"\n\tFase 2 CPU restante: {self.tempo_fase2_cpu}"
-                f"\n\tStatus: {self.pcb.status.name}"
-                f"\n\tPrioridade: {self.pcb.prioridade}"
-                f"\n\tÚltima fila: {self.pcb.ultima_fila}"
-                f"\n\tID: {self.pcb.id}"
+                f"\n\tStatus: {self.estado.name}"
+                f"\n\tPrioridade: {self.prioridade}"
+                f"\n\tDiscos alocados: {self.qtd_discos}"
+                f"\n\tÚltima fila: {self.ultima_fila}"
+                f"\n\tID: {self.id}"
                 f"\n\tTamanho: {self.tam} MiB")
 
 
@@ -110,32 +113,22 @@ class ProcessoCPUBound(Processo):
         self.tempo_cpu = tempo_cpu
 
     def decrementar_tempo_restante(self) -> None: # Atualiza após a cpu executar uma unidade de tempo.
-        if self.pcb.status == Status.FINALIZADO:
+        if self.estado == EstadoProcesso.FINALIZADO:
             raise RuntimeError("Processo já finalizou a execução.")
 
         self.tempo_cpu -= 1
         if self.tempo_cpu <= 0:
-            self.pcb.status = Status.FINALIZADO
-            print(f"\nProcesso CPU-bound {self.pcb.id} finalizou a execução.\n")
+            self.fase = FaseProcesso.FINALIZADO
+            # print(f"\nProcesso CPU-bound {self.id} finalizou a execução.\n")
 
     def get_tempo_execucao_restante(self) -> int:
         return self.tempo_cpu
     
     def __str__(self) -> str:
-        return (f"\tID: {self.pcb.id}"
+        return (f"\tID: {self.id}"
                 f"\n\tTempo de CPU restante: {self.tempo_cpu}"
-                f"\n\tÚltima fila: {self.pcb.ultima_fila}"
-                f"\n\tID: {self.pcb.id}"
-                f"\n\tStatus: {self.pcb.status.name}"
-                f"\n\tPrioridade: {self.pcb.prioridade}"
+                f"\n\tÚltima fila: {self.ultima_fila}"
+                f"\n\tID: {self.id}"
+                f"\n\tStatus: {self.estado.name}"
+                f"\n\tPrioridade: {self.prioridade}"
                 f"\n\tTamanho: {self.tam} MiB")
-    
-
-class PCB: # Bloco com infos de controle de um processo
-
-    def __init__(self, id: int, prioridade: int):
-        self.id = id
-        self.ultima_fila = None # Atributo para armazenar a última fila em que o processo estava antes de ser despachado pela política feed-back.
-        self.status = Status.NOVO
-        self.prioridade = prioridade
-        self.pos_memoria = None

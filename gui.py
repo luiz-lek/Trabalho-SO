@@ -67,6 +67,7 @@ class Application:
        command=lambda: self.mostrar_tela(processSchedulingScreen), highlightthickness=0
        ).pack(fill=X, padx=10, pady=5)
 
+        self.telas = {}
         
         self.conteudo = Frame(self.window, bg="#0a0a0a")
         self.conteudo.pack(side=LEFT, fill=BOTH, expand=True)
@@ -74,16 +75,21 @@ class Application:
         self.mostrar_tela(processMakingScreen) #mostra a tela principal
         self.window.mainloop()
 
+
     def mostrar_tela(self, screen):
-        for widget in self.conteudo.winfo_children():
-            widget.destroy()
-        screen(self.conteudo, self)
+        for tela in self.telas.values():
+            tela.pack_forget()
+
+        if screen not in self.telas:
+            self.telas[screen] = screen(self.conteudo, self)
+        self.telas[screen].pack(fill=BOTH, expand=True)
 
     def resetar(self):
         self.so = SistemaOperaciona()
         self.processos = self.so.processos
         self.despachante = self.so.despachante
         self.lock = self.so.lock
+        self.telas = {}
 
     def retrair_barra(self):
         print("estado antes:", self.barra_aberta)

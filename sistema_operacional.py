@@ -11,53 +11,56 @@ from cpu import *
 class SistemaOperaciona:
 
     def __init__(self, processos: list[Processo] | None = None) -> None:
-        # Todos os componentes do sistema operacional.
-        self.lock = threading.Lock() # Lock para sincronizar o acesso à lista de processos entre o sistema operacional e a GUI.
+        self.lock = threading.Lock()
         self.memoria_principal = MemoriaPrincipal()
-        self.escalonador = Escalonador(self.memoria_principal)
+        self.escalonador = Escalonador()
         self.despachante = Despachante()
         self.cpus: list[CPU] = [CPU(i) for i in range(4)]
         self.dma = DMA()
 
-        self.processos = processos if processos is not None else [] #pra guardar a referência da lista de processos, caso seja passada como argumento, para que a GUI possa acessar os processos do sistema operacional.
+        self.processos = processos if processos is not None else []
 
         processos_lidos = alistaProcessos("entrada.txt", self.despachante)
         for processo in processos_lidos:
-            self.processos.append(processo) #Popula a lista
-            self.escalonador.escalonar_processo_novo(processo)
+            self.processos.append(processo)
+            self.escalonador.admitir_processo(processo)
+
+    def tick(self) -> dict:
+        snapshot = {}
+        
+        processos_perderam_cpu: list[Processo] = list()
+
+        for cpu in self.cpus:
+            if cpu.estado == Estado.Vazio:
+                processo = self.escalonador.selecionar_proximo_processo()
+                self.despachante.despachar(processo, cpu)
+
+            snapshot[cpu.id] = cpu.processo.id if cpu.processo else None
+
+            processo_interrompido = cpu.clock()
+            if processo_interrompido is not None:
+                processos_perderam_cpu.append(processo_interrompido)
+
+        for processo in processos_perderam_cpu:
+            self.escalonador.tratar_retorno_cpu(processo)
+            if processo.estado == EstadoProcesso.BLOQUEADO:
+                self.dma.adicionar_processo(processo) 
+
+        processos_desbloqueados = self.dma.clock()
+        for processo_concluido in processos_desbloqueados:
+            self.escalonador.desbloquer_processo(processo_concluido)
+
+        return snapshot
 
     def executar(self) -> None:
         for i in range(20):
             print(f"\n--- Tique {i} ---")
-            self.clock_cpus()
-            processos_desbloqueados = self.dma.clock()
-            for processo_concluido in processos_desbloqueados:
-                self.escalonador.escalonar_processo_bloqueado(processo_concluido.id)
+            self.tick()
+            time.sleep(0.5)
 
-    
-
-    def clock_cpus(self) -> None:
-        '''
-        Como o programa é sequencial, não podemos por um processo que acabou de sair da cpu direto no escalonador
-        pois corremos o risco de um processo sair da cpu 0, por exemplo e ganhar cpu de novo se a cpu 1 tiver 
-        livre, ganhar cpu de novo no mesmo clock.
-        '''
-        processos_perderam_cpu: list[Processo] = list()
-
-        # Gera um pulso de cock nas 4 cpus
-        for cpu in self.cpus:
-            # Escalona um novo processo se ela estiver livre
-            if cpu.estado == Estado.Vazio:
-                processo = self.escalonador.escalonar_processo_para_execucao()
-                self.despachante.despachar(processo, cpu)
-
-            # Escalona se o processo executado na cpu foi desalocado.
-            processo_interrompido: Processo | None = cpu.clock()
-            if processo_interrompido is not None:
-                processos_perderam_cpu.append(processo_interrompido)
-            print()
-
-        for processo in processos_perderam_cpu:
-            self.escalonador.escalonar_processo_interrompido(processo)
-
-        time.sleep(0.5)
+    def tem_processos_pendentes(self) -> bool:
+        cpus_ocupadas = any(cpu.estado == Estado.Ocupado for cpu in self.cpus)
+        fila_tempo_real = len(self.escalonador.fila_processos_tempo_real.fila) > 0
+        fila_usuario = any(len(f) > 0 for f in self.escalonador.fila_processos_usuario.fila)
+        bloqueados = len(self.escalonador.bloqueados) > 0
+        return cpus_ocupadas or fila_tempo_real or fila_usuario or bloqueados

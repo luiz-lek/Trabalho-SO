@@ -1,15 +1,13 @@
-from leitura_processos import alistaProcessos
+import threading
 from sistema_operacional import SistemaOperaciona
-
+from gui import Application
 from rich.traceback import install
+
 install()
 
 def main():
     so = SistemaOperaciona()
-    for i in range(30):
-        print(f"========================= Tique {i} =========================")
-        so.executar()
-    # app = Application()
+    app = Application(so=so)
               
 if __name__ == "__main__":
     main()

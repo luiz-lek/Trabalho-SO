@@ -7,6 +7,7 @@ install()
 
 def main():
     so = SistemaOperaciona()
+
     app = Application(so=so)
               
 if __name__ == "__main__":

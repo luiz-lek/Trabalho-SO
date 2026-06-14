@@ -106,8 +106,6 @@ class ProcessoIO(Processo):
 class ProcessoCPUBound(Processo):
 
     def __init__(self, id: int, tempo_cpu: int, tam_MiB: int, prioridade: int):
-        if tam_MiB > 512: #tamanho em MiB
-            raise ValueError("Tamanho do processo excede o limite de 512 MiB");
     
         super().__init__(id, tam_MiB, prioridade)
         self.tempo_cpu = tempo_cpu

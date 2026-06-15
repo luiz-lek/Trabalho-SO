@@ -88,28 +88,21 @@ class CPU:
 
 
     def _verificar_troca_de_contexto(self) -> bool:
-        """
-        Tem o objetivo de:
-            1. interrompe o processo quando ele vai para o estado BLOQUEADO
-            2. interrompe o processo quando ele termiana a fase 2 da cpu e é FINALIZADO
-            3. interrompe o processo quando o processo CPUBound termina o tempo de execução
-            4. interrompe o processo a cada quantum.
-        """
-
         trocou = False
 
+        if self.processo.get_tempo_execucao_restante() == 0:
+            print(f"[Finalizado]: Processo {self.processo.id} finalizou a execução e perdeu cpu.")
+            self.processo.estado = EstadoProcesso.FINALIZADO
+            return True
+        
+        if self.processo.prioridade == 0:
+            return False
+        
         if self.processo.fase == FaseProcesso.IO:
             print(f"[Chamada de sistema]: Processo {self.processo.id} solicitou I/O e perdeu cpu.")
             self.processo.estado = EstadoProcesso.BLOQUEADO
-            trocou = True
-                
-        elif self.processo.get_tempo_execucao_restante() == 0:
-            print(f"[Finalizado]: Processo {self.processo.id} finalizou a execução e perdeu cpu.")
-            self.processo.estado = EstadoProcesso.FINALIZADO
-            trocou = True
-        
-        return trocou
-        
+            return True
+
     def interromper(self) -> Processo | None:
         if not self.interrupcao_habilitada:
             raise RuntimeError(f"Interrupção não habilitada para a CPU {self.id}.")

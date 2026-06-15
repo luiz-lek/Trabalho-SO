@@ -124,7 +124,7 @@ class Despachante():
         return self._id_atual
 
     def criar_processo(self, tempo_fase1_cpu: int, tempo_fase_io: int, tempo_fase2_cpu: int, tam_MiB: int, qtd_discos: int, prioridade: int) -> Processo:
-        self.validar_processo(tempo_fase1_cpu, tempo_fase_io, tempo_fase2_cpu, tam_MiB, qtd_discos)
+        self.validar_processo(tempo_fase1_cpu, tempo_fase_io, tempo_fase2_cpu, tam_MiB, qtd_discos, prioridade)
 
         id = self._gerar_id() 
     
@@ -132,21 +132,22 @@ class Despachante():
             return ProcessoCPUBound(id, tempo_fase1_cpu + tempo_fase2_cpu, tam_MiB, prioridade)
         return ProcessoIO(id, tempo_fase1_cpu, tempo_fase_io, tempo_fase2_cpu, tam_MiB, qtd_discos, prioridade)
     
-    def validar_processo(self, tempo_fase1_cpu: int, tempo_fase_io: int, tempo_fase2_cpu: int, tam_MiB: int, qtd_discos: int):
+    def validar_processo(self, tempo_fase1_cpu: int, tempo_fase_io: int, tempo_fase2_cpu: int, tam_MiB: int, qtd_discos: int, prioridade: int):
         # Validação geral
         if tempo_fase1_cpu < 0 or tempo_fase2_cpu < 0 or tempo_fase_io < 0:
             raise ValueError("Tempos de CPU e E/S devem ser valores não negativos");
         if tam_MiB > 32000 or tam_MiB < 0:
-            raise ValueError(f"O tamanho do processo deve estar entre 1 e 32000 MIB. [Quantidade solicitada {tam_MiB}]")
-        
+            raise ValueError(f"O tamanho do processo deve estar entre 1 e 32000 MIB.\n[Quantidade solicitada {tam_MiB}]")
+        if prioridade < 0 or prioridade > 1:
+            raise ValueError(f"Prioridade de ser 0 ou 1.\n[Prioridade passada: {prioridade}]")
         # Validação de processo I/O
         if tempo_fase_io != 0:
             if qtd_discos < 1 or qtd_discos > 4:
-                raise ValueError(f"Processo deve solicitar no mínimo 1 e no máximo 4 Discos. [Quantidade solicitada {qtd_discos}]")
+                raise ValueError(f"Processo deve solicitar no mínimo 1 e no máximo 4 Discos.\n[Quantidade solicitada {qtd_discos}]")
         # Validação de CPU BOUND
         else:
             if tam_MiB > 512:
-                raise ValueError(f"Processo CPU BOUND não deve exceder 512 mib. [Tamanho: {tam_MiB}]")
+                raise ValueError(f"Processo CPU BOUND não deve exceder 512 mib.\n[Tamanho: {tam_MiB}]")
             if qtd_discos != 0:
                 raise ValueError("Processo CPU BOUND não deve solicitar disco.")
 

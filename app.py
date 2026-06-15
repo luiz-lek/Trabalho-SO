@@ -1,9 +1,6 @@
 import threading
 from sistema_operacional import SistemaOperacional
 from gui import Application
-from rich.traceback import install
-
-install()
 
 def main():
     so = SistemaOperacional()

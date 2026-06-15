@@ -2,12 +2,6 @@ from enum import Enum
 from processos import *
 from queue import Queue
 
-"""
-Tarefas a fazer:
-1. fazer a verificação de estado de PRONTO dos processos nas funções: alocar..., Clock..., 
-2. Eu tava pensando colocar a função interrupção dentro do clock para não precisar chamar duas funções dentro da main.py
-
-"""
 class Estado(Enum):
     Vazio = 0
     Ocupado = 1
@@ -88,8 +82,6 @@ class CPU:
 
 
     def _verificar_troca_de_contexto(self) -> bool:
-        trocou = False
-
         if self.processo.get_tempo_execucao_restante() == 0:
             print(f"[Finalizado]: Processo {self.processo.id} finalizou a execução e perdeu cpu.")
             self.processo.estado = EstadoProcesso.FINALIZADO

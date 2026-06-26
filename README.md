@@ -98,6 +98,6 @@ Cada tick do sistema executa, em ordem:
 
 ## 👥 Autores
 - [@Danilo Alexandre](https://github.com/TheChronicMasterX)
-- [@Eric Maia](https://github.com/3ricz71))
+- [@Eric Maia](https://github.com/3ricz71)
 - [@Luiz Eduardo](https://github.com/luiz-lek)
 - [@Yago Santos](https://github.com/YAGO-SG)

@@ -13,14 +13,15 @@ Simulação de um sistema operacional com escalonamento de processos, gerenciame
 Instale o Tkinter caso não tenha:
 
 
-# Clone o repositório
+### Clone o repositório
 
 ```bash
 git clone https://github.com/luiz-lek/Trabalho-SO.git
 cd Trabalho-SO
 ```
+
+### Rode o projeto
 ```bash
-# Rode o projeto
 python app.py
 ```
 
